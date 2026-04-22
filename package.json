@@ -6,11 +6,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thiagorufino1/ai-mcp-portal.git"
+    "url": "git+https://github.com/thiagorufino1/mcp-hub-ui.git"
   },
-  "homepage": "https://github.com/thiagorufino1/ai-mcp-portal#readme",
+  "homepage": "https://github.com/thiagorufino1/mcp-hub-ui#readme",
   "bugs": {
-    "url": "https://github.com/thiagorufino1/ai-mcp-portal/issues"
+    "url": "https://github.com/thiagorufino1/mcp-hub-ui/issues"
   },
   "bin": {
     "mcp-hub-ui": "./bin/mcp-portal.mjs"
