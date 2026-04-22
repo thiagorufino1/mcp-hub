@@ -1,0 +1,86 @@
+{
+  "name": "mcp-hub-ui",
+  "version": "1.0.0",
+  "private": false,
+  "description": "Local MCP chat portal - run any LLM with any MCP server via npx",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thiagorufino1/ai-mcp-portal.git"
+  },
+  "homepage": "https://github.com/thiagorufino1/ai-mcp-portal#readme",
+  "bugs": {
+    "url": "https://github.com/thiagorufino1/ai-mcp-portal/issues"
+  },
+  "bin": {
+    "mcp-hub-ui": "./bin/mcp-portal.mjs"
+  },
+  "files": [
+    ".next/standalone",
+    ".next/static",
+    "public",
+    "bin",
+    "scripts"
+  ],
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "build:package": "next build && node scripts/copy-standalone.mjs",
+    "prepack": "npm run build:package"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "mcp",
+    "llm",
+    "openai",
+    "claude",
+    "chat",
+    "local"
+  ],
+  "author": "",
+  "dependencies": {
+    "@ai-sdk/amazon-bedrock": "^4.0.96",
+    "@ai-sdk/azure": "^3.0.54",
+    "@ai-sdk/google": "^3.0.64",
+    "@ai-sdk/openai": "^3.0.53",
+    "@modelcontextprotocol/sdk": "^1.28.0",
+    "@radix-ui/react-avatar": "^1.1.11",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
+    "@radix-ui/react-label": "^2.1.8",
+    "@radix-ui/react-scroll-area": "^1.2.10",
+    "@radix-ui/react-separator": "^1.1.8",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "ai": "^6.0.168",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.7.0",
+    "next": "^16.2.1",
+    "next-themes": "^0.4.6",
+    "open": "^11.0.0",
+    "openai": "^6.33.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.1",
+    "tailwind-merge": "^3.5.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.1",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,211 @@
+"use client";
+
+import { Boxes, Check, Copy, MessageSquarePlus, MoonStar, Settings, Sun } from "lucide-react";
+import { useState } from "react";
+
+import { useAppPreferences } from "@/components/providers/app-preferences-provider";
+import { useTheme } from "@/components/providers/theme-provider";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+
+type Props = {
+  connectedCount: number;
+  totalCount: number;
+  onNewConversation?: () => void;
+  onToggleSidebar?: () => void;
+  onCopySession?: () => Promise<void>;
+};
+
+export function Topbar({
+  connectedCount,
+  totalCount,
+  onNewConversation,
+  onToggleSidebar,
+  onCopySession,
+}: Props) {
+  const [copiedSession, setCopiedSession] = useState(false);
+  const { locale, setLocale, t } = useAppPreferences();
+  const { theme, setTheme } = useTheme();
+
+  async function handleCopy() {
+    if (!onCopySession) return;
+    await onCopySession();
+    setCopiedSession(true);
+    window.setTimeout(() => setCopiedSession(false), 2000);
+  }
+
+  const cieloHeaderBackground = "linear-gradient(135deg, hsl(207, 100%, 35%), hsl(213, 100%, 19%))";
+
+  return (
+    <header
+      className="shadow-[inset_0_-1px_0_rgba(255,255,255,0.12)]"
+      style={{
+        background: cieloHeaderBackground,
+      }}
+    >
+      <div className={cn("mx-auto flex h-[52px] w-full max-w-[1480px] items-center justify-between gap-4 px-3 sm:px-4 lg:px-6 transition-all duration-300")}>
+        <TooltipProvider delayDuration={120}>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex items-center gap-2">
+              <div className="flex size-[26px] items-center justify-center rounded-lg border border-white/20 bg-white/10 text-white shadow-sm">
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M7 1L12.196 4V10L7 13L1.804 10V4L7 1Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" fill="currentColor" fillOpacity="0.2" />
+                  <circle cx="7" cy="7" r="2" fill="currentColor" />
+                </svg>
+              </div>
+              <p className="text-[16px] font-semibold tracking-[-0.04em] text-white" translate="no">
+                mcp<span className="text-white/70">hub-ui</span>
+              </p>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="cursor-help rounded-md border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-mono leading-none tracking-widest text-white/90 shadow-sm backdrop-blur-[2px]">
+                  {t("app.version") || "v1.0.0"}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="z-[999] border-none bg-slate-950 px-3 py-1.5 text-[11.5px] font-medium text-slate-100 shadow-2xl shadow-black/80">
+                mcp-hub-ui
+              </TooltipContent>
+            </Tooltip>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="hidden items-center gap-0.5 rounded-full bg-white/[0.09] p-1 shadow-[0_8px_18px_rgba(8,24,64,0.10)] backdrop-blur-[4px] sm:flex">
+              <div className="inline-flex h-7 items-center gap-2 rounded-full bg-transparent px-3 text-white">
+                <Boxes className="size-[13px]" />
+                <span className="text-[12px] font-medium">{t("topbar.mcpCount") || "MCPs"}</span>
+                <span className="rounded-full bg-white/[0.16] px-2 py-0.5 text-[11px] text-white">
+                  {connectedCount}/{totalCount}
+                </span>
+              </div>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 rounded-full px-2.5 text-white/92 shadow-none hover:bg-white/[0.08] hover:text-white"
+                onClick={onNewConversation}
+              >
+                <MessageSquarePlus className="size-[13px]" />
+                <span className="text-[12px] font-medium">{t("topbar.newConversation")}</span>
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 rounded-full px-2.5 text-white/92 shadow-none hover:bg-white/[0.08] hover:text-white"
+                onClick={() => void handleCopy()}
+              >
+                {copiedSession ? <Check className="size-[13px]" /> : <Copy className="size-[13px]" />}
+                <span className="text-[12px] font-medium">{copiedSession ? t("topbar.sessionCopied") : t("topbar.copySession")}</span>
+              </Button>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 rounded-full bg-white/[0.07] text-white shadow-[0_6px_18px_rgba(8,24,64,0.08)] backdrop-blur-[4px] hover:bg-white/[0.12] hover:text-white sm:hidden"
+              onClick={onToggleSidebar}
+            >
+              <Boxes className="size-4" />
+            </Button>
+
+            <div className="relative flex items-center rounded-full bg-white/[0.08] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] backdrop-blur-md">
+              <div
+                className="absolute size-7 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-all duration-300 ease-in-out"
+                style={{
+                  transform: theme === "dark" ? "translateX(28px)" : "translateX(0)",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setTheme("light")}
+                className={cn(
+                  "relative z-10 flex size-7 items-center justify-center rounded-full transition-colors duration-300",
+                  theme !== "dark" ? "text-slate-900" : "text-white/50 hover:text-white"
+                )}
+                aria-label={t("theme.light")}
+              >
+                <Sun className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme("dark")}
+                className={cn(
+                  "relative z-10 flex size-7 items-center justify-center rounded-full transition-colors duration-300",
+                  theme === "dark" ? "text-slate-900" : "text-white/50 hover:text-white"
+                )}
+                aria-label={t("theme.dark")}
+              >
+                <MoonStar className="size-3.5" />
+              </button>
+            </div>
+
+            <div className="relative flex items-center rounded-full bg-white/[0.08] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] backdrop-blur-md">
+              <div
+                className="absolute size-7 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-all duration-300 ease-in-out"
+                style={{
+                  transform: locale === "pt-BR" ? "translateX(28px)" : "translateX(0)",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setLocale("en")}
+                className={cn(
+                  "relative z-10 flex size-7 items-center justify-center rounded-full transition-all duration-300",
+                  locale === "en" ? "scale-110 opacity-100" : "scale-90 opacity-40 hover:opacity-100"
+                )}
+                aria-label={t("language.en")}
+              >
+                <span aria-hidden="true" className="text-[14px] leading-none">
+                  🇺🇸
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocale("pt-BR")}
+                className={cn(
+                  "relative z-10 flex size-7 items-center justify-center rounded-full transition-all duration-300",
+                  locale === "pt-BR" ? "scale-110 opacity-100" : "scale-90 opacity-40 hover:opacity-100"
+                )}
+                aria-label={t("language.pt")}
+              >
+                <span aria-hidden="true" className="text-[14px] leading-none">
+                  🇧🇷
+                </span>
+              </button>
+            </div>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  aria-label={t("topbar.configureLlm")}
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 rounded-full bg-white/[0.07] text-white/92 shadow-[0_6px_18px_rgba(8,24,64,0.08)] backdrop-blur-[4px] hover:bg-white/[0.10] hover:text-white xl:hidden"
+                  onClick={onToggleSidebar}
+                >
+                  <Settings className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="bottom"
+                className="z-[999] border-none bg-slate-950 px-3 py-1.5 text-[11.5px] font-medium text-slate-100 shadow-2xl shadow-black/80"
+              >
+                {t("topbar.configureLlm")}
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
+      </div>
+    </header>
+  );
+}
