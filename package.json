@@ -1,8 +1,8 @@
 {
-  "name": "mcp-hub-ui",
+  "name": "@thiagorufino/mcp-hub-ui",
   "version": "1.0.0",
   "private": false,
-  "description": "Local MCP chat portal - run any LLM with any MCP server via npx",
+  "description": "Local UI for testing LLMs and MCP servers via npx",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -36,10 +36,11 @@
   "keywords": [
     "mcp",
     "llm",
-    "openai",
-    "claude",
     "chat",
-    "local"
+    "local",
+    "ui",
+    "model-context-protocol",
+    "ai"
   ],
   "author": "",
   "dependencies": {

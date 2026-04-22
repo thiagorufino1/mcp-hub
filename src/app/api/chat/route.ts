@@ -1,5 +1,6 @@
-import { generateText, jsonSchema } from "ai";
+import { jsonSchema, stepCountIs, streamText, tool } from "ai";
 import type { ModelMessage } from "@ai-sdk/provider-utils";
+import type { ToolSet } from "ai";
 import { z } from "zod";
 
 import { getModel } from "@/lib/ai-provider";
@@ -11,13 +12,18 @@ import type { McpServerConfig } from "@/types/mcp";
 const ChatRequestBodySchema = z.object({
   customPrompt: z.string().max(8000).optional(),
   message: z.string().optional(),
-  messages: z.array(z.object({
-    role: z.enum(["user", "assistant"]),
-    content: z.string().max(12000)
-  })).max(100).optional(),
+  messages: z
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string().max(12000),
+      }),
+    )
+    .max(100)
+    .optional(),
   mcpServers: z.array(z.any()).optional(),
   requestId: z.string().min(1).max(120).optional(),
-  llmConfig: z.object({ provider: z.string() }).passthrough().optional()
+  llmConfig: z.object({ provider: z.string() }).passthrough().optional(),
 });
 
 type ChatRequestBody = z.infer<typeof ChatRequestBodySchema>;
@@ -48,7 +54,13 @@ export async function POST(request: Request) {
 
   const parsed = ChatRequestBodySchema.safeParse(rawBody);
   if (!parsed.success) {
-    return streamSingleEvent({ type: "error", message: parsed.error.issues[0]?.message ?? "Erro de validacao" }, 400);
+    return streamSingleEvent(
+      {
+        type: "error",
+        message: parsed.error.issues[0]?.message ?? "Erro de validacao",
+      },
+      400,
+    );
   }
 
   const body = parsed.data as ChatRequestBody;
@@ -82,17 +94,48 @@ async function streamWithAISDK(body: ChatRequestBody) {
       try {
         enqueue({ type: "message_start", id: assistantId, requestId: body.requestId });
 
-        const result = await getAssistantResult(
-          body.llmConfig as any,
-          body.customPrompt,
-          userPrompt,
-          body.messages ?? [],
-          body.mcpServers ?? [],
-          body.requestId,
-          enqueue,
-        );
+        let hasText = false;
+        let finalUsage: TokenUsage | undefined;
 
-        if (!result.text.trim()) {
+        const result = streamText({
+          model: getModel(body.llmConfig as LLMConfig),
+          messages: buildConversation(
+            userPrompt,
+            body.customPrompt,
+            body.messages ?? [],
+            body.mcpServers ?? [],
+          ),
+          stopWhen: stepCountIs(6),
+          toolChoice: "auto",
+          tools: buildAiSdkTools(body.mcpServers ?? [], body.requestId, enqueue),
+        });
+
+        for await (const part of result.fullStream) {
+          switch (part.type) {
+            case "text-delta":
+              if (!part.text) break;
+              hasText = true;
+              enqueue({
+                type: "message_delta",
+                id: assistantId,
+                requestId: body.requestId,
+                delta: part.text,
+              });
+              break;
+            case "finish":
+              finalUsage = mapUsage(part.totalUsage);
+              break;
+            case "error":
+              enqueue({
+                type: "error",
+                message: extractErrorMessage(part.error),
+              });
+              controller.close();
+              return;
+          }
+        }
+
+        if (!hasText) {
           enqueue({
             type: "error",
             message: "O LLM respondeu sem conteudo textual apos o ciclo de tools.",
@@ -101,26 +144,16 @@ async function streamWithAISDK(body: ChatRequestBody) {
           return;
         }
 
-        for (const chunk of chunkText(result.text, 48)) {
-          enqueue({
-            type: "message_delta",
-            id: assistantId,
-            requestId: body.requestId,
-            delta: chunk,
-          });
-          await sleep(20);
-        }
-
         enqueue({
           type: "message_end",
           id: assistantId,
           requestId: body.requestId,
-          usage: result.usage,
+          usage: finalUsage ?? mapUsage(await result.totalUsage),
         });
       } catch (error) {
         enqueue({
           type: "error",
-          message: error instanceof Error ? error.message : "Falha ao consultar o LLM.",
+          message: extractErrorMessage(error),
         });
       } finally {
         controller.close();
@@ -137,35 +170,32 @@ async function streamWithAISDK(body: ChatRequestBody) {
   });
 }
 
-async function getAssistantResult(
-  llmConfig: LLMConfig,
-  customPrompt: string | undefined,
+function buildConversation(
   userPrompt: string,
+  customPrompt: string | undefined,
   messages: Array<Pick<Message, "content" | "role">>,
   mcpServers: McpServerConfig[],
-  requestId?: string,
-  emitEvent?: (event: ChatStreamEvent) => void,
-): Promise<{ text: string; usage?: TokenUsage }> {
-  const model = getModel(llmConfig);
+): ModelMessage[] {
   const contextualServers = mcpServers.filter((s) => s.connectionStatus === "connected");
-  const executableTools = buildExecutableTools(contextualServers);
   const contextPrompt = buildMcpContext(contextualServers);
-  const defaultPrompt =
-    [
-      "You are a helpful assistant with access to MCP tools. Use the available tools when they help answer the user's request accurately.",
-      "When the user asks for a visual chart or graph, you can render one directly in the chat using a fenced code block with language `chart` followed by valid JSON.",
-      "Supported chart types: `bar`, `line`, `area`, `pie`, `donut`.",
-      "Use this schema: {\"type\":\"bar|line|area|pie|donut\",\"title\":\"...\",\"description\":\"...\",\"labels\":[\"A\",\"B\"],\"series\":[{\"name\":\"Series 1\",\"color\":\"#2563eb\",\"data\":[10,20]}],\"xLabel\":\"...\",\"yLabel\":\"...\"}.",
-      "For pie and donut charts, keep labels in `labels` and values in the first series data array.",
-      "Always put the chart block after a short textual introduction and before the explanation.",
-    ].join(" ");
+  const defaultPrompt = [
+    "You are a helpful assistant with access to MCP tools. Use the available tools when they help answer the user's request accurately.",
+    "When the user asks for a visual chart or graph, you can render one directly in the chat using a fenced code block with language `chart` followed by valid JSON.",
+    "Supported chart types: `bar`, `line`, `area`, `pie`, `donut`.",
+    'Use this schema: {"type":"bar|line|area|pie|donut","title":"...","description":"...","labels":["A","B"],"series":[{"name":"Series 1","color":"#2563eb","data":[10,20]}],"xLabel":"...","yLabel":"..."}.',
+    "For pie and donut charts, keep labels in `labels` and values in the first series data array.",
+    "Always put the chart block after a short textual introduction and before the explanation.",
+  ].join(" ");
   const instructions = [defaultPrompt, customPrompt, contextPrompt]
     .filter(Boolean)
     .join("\n\n");
 
   const history: ModelMessage[] = messages
-    .filter((m) => m.role === "user" || m.role === "assistant")
-    .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+    .filter((message) => message.role === "user" || message.role === "assistant")
+    .map((message) => ({
+      role: message.role as "user" | "assistant",
+      content: message.content,
+    }));
 
   if (
     history.length === 0 ||
@@ -175,125 +205,83 @@ async function getAssistantResult(
     history.push({ role: "user", content: userPrompt });
   }
 
-  const conversation: ModelMessage[] = [
-    { role: "system", content: instructions },
-    ...history,
-  ];
+  return [{ role: "system", content: instructions }, ...history];
+}
 
-  const aiSdkTools =
-    executableTools.length > 0
-      ? Object.fromEntries(
-          executableTools.map((tool) => [
-            tool.functionName,
-            {
-              description: [
-                `MCP tool ${tool.displayName} on server ${tool.server.name}.`,
-                tool.toolDescription,
-              ]
-                .filter(Boolean)
-                .join(" "),
-              inputSchema: jsonSchema(
-                tool.inputSchema as Parameters<typeof jsonSchema>[0],
-              ),
-            },
-          ]),
-        )
-      : undefined;
+function buildAiSdkTools(
+  mcpServers: McpServerConfig[],
+  requestId: string | undefined,
+  emitEvent: (event: ChatStreamEvent) => void,
+): ToolSet {
+  const contextualServers = mcpServers.filter((server) => server.connectionStatus === "connected");
+  const executableTools = buildExecutableTools(contextualServers);
 
-  let latestText = "";
+  return Object.fromEntries(
+    executableTools.map((executableTool) => [
+      executableTool.functionName,
+      tool({
+        description: [
+          `MCP tool ${executableTool.displayName} on server ${executableTool.server.name}.`,
+          executableTool.toolDescription,
+        ]
+          .filter(Boolean)
+          .join(" "),
+        inputSchema: jsonSchema(
+          executableTool.inputSchema as Parameters<typeof jsonSchema>[0],
+        ),
+        execute: async (input) => {
+          const toolEventId = `tool-${crypto.randomUUID()}`;
+          const args =
+            input && typeof input === "object" && !Array.isArray(input)
+              ? (input as Record<string, unknown>)
+              : {};
+          const argsText = JSON.stringify(args);
 
-  for (let iteration = 0; iteration < 6; iteration += 1) {
-    const result = await generateText({
-      model,
-      messages: conversation,
-      ...(aiSdkTools ? { tools: aiSdkTools, toolChoice: "auto" } : {}),
-    });
+          emitEvent({
+            type: "tool_start",
+            id: toolEventId,
+            requestId,
+            tool: executableTool.displayName,
+            title: `Executando ${executableTool.displayName}`,
+            argsText,
+            reason: `Servidor ${executableTool.server.name}. Args: ${truncate(argsText || "{}", 180)}`,
+          });
 
-    latestText = result.text;
+          try {
+            const mcpResult = await executeMcpTool(
+              executableTool.server,
+              executableTool.displayName,
+              args,
+            );
+            const resultText = extractToolResultText(mcpResult);
+            const status = resultIndicatesError(mcpResult) ? "error" : "success";
 
-    if (result.finishReason !== "tool-calls" || result.toolCalls.length === 0) {
-      return { text: latestText, usage: mapUsage(result.totalUsage) };
-    }
+            emitEvent({
+              type: "tool_end",
+              id: toolEventId,
+              requestId,
+              status,
+              summary: truncate(resultText, 15000),
+            });
 
-    conversation.push({
-      role: "assistant",
-      content: result.toolCalls.map((tc) => ({
-        type: "tool-call" as const,
-        toolCallId: tc.toolCallId,
-        toolName: tc.toolName,
-        input: tc.input as Record<string, unknown>,
-      })),
-    });
+            return buildToolConversationContent(mcpResult);
+          } catch (error) {
+            const errorMessage = extractErrorMessage(error);
 
-    const toolResults: Array<{
-      type: "tool-result";
-      toolCallId: string;
-      toolName: string;
-      output: { type: "text"; value: string };
-    }> = [];
+            emitEvent({
+              type: "tool_end",
+              id: toolEventId,
+              requestId,
+              status: "error",
+              summary: truncate(errorMessage, 2000),
+            });
 
-    for (const toolCall of result.toolCalls) {
-      const tool = executableTools.find((t) => t.functionName === toolCall.toolName);
-      if (!tool) continue;
-
-      const toolEventId = toolCall.toolCallId;
-      const args = toolCall.input as Record<string, unknown>;
-      const argsText = JSON.stringify(args);
-
-      emitEvent?.({
-        type: "tool_start",
-        id: toolEventId,
-        requestId,
-        tool: tool.displayName,
-        title: `Executando ${tool.displayName}`,
-        argsText,
-        reason: `Servidor ${tool.server.name}. Args: ${truncate(argsText || "{}", 180)}`,
-      });
-
-      try {
-        const mcpResult = await executeMcpTool(tool.server, tool.displayName, args);
-        const resultText = extractToolResultText(mcpResult);
-        const resultStatus = resultIndicatesError(mcpResult) ? "error" : "success";
-
-        emitEvent?.({
-          type: "tool_end",
-          id: toolEventId,
-          requestId,
-          status: resultStatus,
-          summary: truncate(resultText, 15000),
-        });
-
-        toolResults.push({
-          type: "tool-result",
-          toolCallId: toolEventId,
-          toolName: tool.displayName,
-          output: { type: "text", value: buildToolConversationContent(mcpResult) },
-        });
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Falha ao executar a tool MCP.";
-
-        emitEvent?.({
-          type: "tool_end",
-          id: toolEventId,
-          requestId,
-          status: "error",
-          summary: truncate(errorMessage, 2000),
-        });
-
-        toolResults.push({
-          type: "tool-result",
-          toolCallId: toolEventId,
-          toolName: tool.displayName,
-          output: { type: "text", value: `Erro ao executar ${tool.displayName}: ${errorMessage}` },
-        });
-      }
-    }
-
-    conversation.push({ role: "tool", content: toolResults });
-  }
-
-  return { text: latestText };
+            return `Erro ao executar ${executableTool.displayName}: ${errorMessage}`;
+          }
+        },
+      }),
+    ]),
+  );
 }
 
 function mapUsage(usage: {
@@ -320,16 +308,16 @@ function streamMockResponse(body: ChatRequestBody) {
   const preferredServer = mcpServers[0];
 
   const responseText = [
-    "### ✨ Modo de Demonstração Ativo",
+    "### Modo de Demonstracao Ativo",
     "",
     `Recebi sua mensagem: **"${userPrompt}"**`,
     "",
     preferredServer
-      ? `O servidor MCP **${preferredServer.name}** está integrado e pronto para uso com **${preferredServer.tools.length}** ferramentas disponíveis.`
-      : "Nenhum servidor MCP foi conectado até o momento para expandir minhas capacidades.",
+      ? `O servidor MCP **${preferredServer.name}** esta integrado e pronto para uso com **${preferredServer.tools.length}** ferramentas disponiveis.`
+      : "Nenhum servidor MCP foi conectado ate o momento para expandir minhas capacidades.",
     "",
     "---",
-    "💡 **Dica:** Para ativar respostas reais da IA e interagir com as ferramentas do portal, adicione um **Provedor de LLM** na barra lateral de configurações.",
+    "Dica: para ativar respostas reais da IA e interagir com as ferramentas do portal, adicione um provedor de LLM na barra lateral de configuracoes.",
   ].join("\n");
 
   const stream = new ReadableStream({
@@ -373,18 +361,26 @@ function streamSingleEvent(event: ChatStreamEvent, status = 200) {
 
 function buildExecutableTools(mcpServers: McpServerConfig[]): ExecutableTool[] {
   return mcpServers.flatMap((server) =>
-    server.tools.map((tool) => ({
-      displayName: tool.name,
-      functionName: buildToolFunctionName(server.id, tool.name),
-      inputSchema: tool.inputSchema ?? { type: "object" as const, properties: {}, required: [] },
+    server.tools.map((toolDefinition) => ({
+      displayName: toolDefinition.name,
+      functionName: buildToolFunctionName(server.id, toolDefinition.name),
+      inputSchema:
+        toolDefinition.inputSchema ?? {
+          type: "object" as const,
+          properties: {},
+          required: [],
+        },
       server,
-      toolDescription: tool.description,
+      toolDescription: toolDefinition.description,
     })),
   );
 }
 
 function buildToolFunctionName(serverId: string, toolName: string) {
-  return `mcp_${sanitizeFunctionToken(serverId)}__${sanitizeFunctionToken(toolName)}`.slice(0, 64);
+  return `mcp_${sanitizeFunctionToken(serverId)}__${sanitizeFunctionToken(toolName)}`.slice(
+    0,
+    64,
+  );
 }
 
 function sanitizeFunctionToken(value: string) {
@@ -397,7 +393,7 @@ function buildMcpContext(mcpServers: McpServerConfig[]) {
   const serialized = mcpServers
     .map((server, index) => {
       const tools = server.tools
-        .map((tool) => sanitizePromptValue(tool.name, 80))
+        .map((toolDefinition) => sanitizePromptValue(toolDefinition.name, 80))
         .filter(Boolean)
         .join(", ");
       const description = sanitizePromptValue(server.description, 180);
@@ -428,15 +424,15 @@ function extractToolResultText(result: unknown): string {
   const textParts = (Array.isArray(candidate.content) ? candidate.content : [])
     .map((item) => {
       if (typeof item.text === "string" && item.text.trim()) return item.text.trim();
-      if ("content" in item && typeof item.content === "string" && item.content.trim())
+      if ("content" in item && typeof item.content === "string" && item.content.trim()) {
         return item.content.trim();
+      }
       return "";
     })
     .filter(Boolean);
 
   if (textParts.length > 0) return textParts.join("\n");
-  if (candidate.structuredContent)
-    return JSON.stringify(candidate.structuredContent, null, 2);
+  if (candidate.structuredContent) return JSON.stringify(candidate.structuredContent, null, 2);
   return candidate.isError ? "A tool retornou erro sem detalhes." : "Tool executada.";
 }
 
@@ -464,8 +460,8 @@ function resultIndicatesError(result: unknown) {
 
 function chunkText(content: string, size: number) {
   const chunks: string[] = [];
-  for (let i = 0; i < content.length; i += size) {
-    chunks.push(content.slice(i, i + size));
+  for (let index = 0; index < content.length; index += size) {
+    chunks.push(content.slice(index, index + size));
   }
   return chunks;
 }
@@ -480,10 +476,6 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
 function sanitizePromptValue(value: unknown, limit: number) {
   if (typeof value !== "string") return "";
   return value
@@ -494,4 +486,6 @@ function sanitizePromptValue(value: unknown, limit: number) {
     .slice(0, limit);
 }
 
-
+function extractErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Falha ao consultar o LLM.";
+}
