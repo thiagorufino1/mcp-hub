@@ -1,19 +1,13 @@
 "use client";
 
-import { Boxes, Check, Copy, MessageSquarePlus, MoonStar, Settings, Sun } from "lucide-react";
+import { IconBrandGithub } from "@tabler/icons-react";
+import { CircleFlag } from "react-circle-flags";
 import { useState } from "react";
 
 import { useAppPreferences } from "@/components/providers/app-preferences-provider";
 import { useTheme } from "@/components/providers/theme-provider";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Boxes, Check, Copy, MessageSquarePlus, MoonStar, Settings, Sun } from "@/components/ui/icons";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -56,14 +50,8 @@ export function Topbar({
         <TooltipProvider delayDuration={120}>
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="flex items-center gap-2">
-              <div className="flex size-[26px] items-center justify-center rounded-lg border border-white/20 bg-white/10 text-white shadow-sm">
-                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                  <path d="M7 1L12.196 4V10L7 13L1.804 10V4L7 1Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" fill="currentColor" fillOpacity="0.2" />
-                  <circle cx="7" cy="7" r="2" fill="currentColor" />
-                </svg>
-              </div>
               <p className="text-[16px] font-semibold tracking-[-0.04em] text-white" translate="no">
-                mcp<span className="text-white/70">hub-ui</span>
+                MCP <span className="text-white/70">Hub UI</span>
               </p>
             </div>
             <Tooltip>
@@ -107,6 +95,23 @@ export function Topbar({
                 {copiedSession ? <Check className="size-[13px]" /> : <Copy className="size-[13px]" />}
                 <span className="text-[12px] font-medium">{copiedSession ? t("topbar.sessionCopied") : t("topbar.copySession")}</span>
               </Button>
+
+              <a
+                href="https://github.com/thiagorufino1/mcp-hub-ui"
+                target="_blank"
+                rel="noreferrer"
+                aria-label={t("topbar.githubLabel")}
+                className="inline-flex"
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 rounded-full px-2.5 text-white/92 shadow-none hover:bg-white/[0.08] hover:text-white"
+                >
+                  <IconBrandGithub className="size-[13px]" stroke={1.8} />
+                  <span className="text-[12px] font-medium">GitHub</span>
+                </Button>
+              </a>
             </div>
 
             <Button
@@ -165,9 +170,7 @@ export function Topbar({
                 )}
                 aria-label={t("language.en")}
               >
-                <span aria-hidden="true" className="text-[14px] leading-none">
-                  🇺🇸
-                </span>
+                <CircleFlag countryCode="us" height="10" className="size-5" aria-hidden="true" />
               </button>
               <button
                 type="button"
@@ -178,11 +181,35 @@ export function Topbar({
                 )}
                 aria-label={t("language.pt")}
               >
-                <span aria-hidden="true" className="text-[14px] leading-none">
-                  🇧🇷
-                </span>
+                <CircleFlag countryCode="br" height="10" className="size-5" aria-hidden="true" />
               </button>
             </div>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <a
+                  href="https://github.com/thiagorufino1/mcp-hub-ui"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={t("topbar.githubLabel")}
+                  className="inline-flex"
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 rounded-full bg-white/[0.07] text-white/92 shadow-[0_6px_18px_rgba(8,24,64,0.08)] backdrop-blur-[4px] transition-colors hover:bg-white/[0.10] hover:text-white sm:hidden"
+                  >
+                    <IconBrandGithub className="size-3.5" stroke={1.8} />
+                  </Button>
+                </a>
+              </TooltipTrigger>
+              <TooltipContent
+                side="bottom"
+                className="z-[999] border-none bg-slate-950 px-3 py-1.5 text-[11.5px] font-medium text-slate-100 shadow-2xl shadow-black/80"
+              >
+                GitHub
+              </TooltipContent>
+            </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>

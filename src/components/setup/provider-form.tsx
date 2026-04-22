@@ -169,6 +169,46 @@ export function ProviderForm({ provider, values, onChange }: Props) {
           />
         </div>
       );
+
+    case "anthropic":
+      return (
+        <div className="flex flex-col gap-3">
+          <Field id="apiKey" label="API Key" type="password" value={values.apiKey ?? ""} onChange={(v) => onChange("apiKey", v)} />
+          <Field id="model" label="Model" placeholder="claude-sonnet-4-5" value={values.model ?? ""} onChange={(v) => onChange("model", v)} />
+        </div>
+      );
+
+    case "groq":
+      return (
+        <div className="flex flex-col gap-3">
+          <Field id="apiKey" label="API Key" type="password" value={values.apiKey ?? ""} onChange={(v) => onChange("apiKey", v)} />
+          <Field id="model" label="Model" placeholder="llama-3.3-70b-versatile" value={values.model ?? ""} onChange={(v) => onChange("model", v)} />
+        </div>
+      );
+
+    case "xai":
+      return (
+        <div className="flex flex-col gap-3">
+          <Field id="apiKey" label="API Key" type="password" value={values.apiKey ?? ""} onChange={(v) => onChange("apiKey", v)} />
+          <Field id="model" label="Model" placeholder="grok-2-latest" value={values.model ?? ""} onChange={(v) => onChange("model", v)} />
+        </div>
+      );
+
+    case "mistral":
+      return (
+        <div className="flex flex-col gap-3">
+          <Field id="apiKey" label="API Key" type="password" value={values.apiKey ?? ""} onChange={(v) => onChange("apiKey", v)} />
+          <Field id="model" label="Model" placeholder="mistral-large-latest" value={values.model ?? ""} onChange={(v) => onChange("model", v)} />
+        </div>
+      );
+
+    case "deepseek":
+      return (
+        <div className="flex flex-col gap-3">
+          <Field id="apiKey" label="API Key" type="password" value={values.apiKey ?? ""} onChange={(v) => onChange("apiKey", v)} />
+          <Field id="model" label="Model" placeholder="deepseek-chat" value={values.model ?? ""} onChange={(v) => onChange("model", v)} />
+        </div>
+      );
   }
 }
 
@@ -206,5 +246,12 @@ export function buildLLMConfig(
     case "ollama":
       if (!values.baseUrl || !values.model) return null;
       return { provider, baseUrl: values.baseUrl, model: values.model };
+    case "anthropic":
+    case "groq":
+    case "xai":
+    case "mistral":
+    case "deepseek":
+      if (!values.apiKey || !values.model) return null;
+      return { provider, apiKey: values.apiKey, model: values.model };
   }
 }

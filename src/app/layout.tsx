@@ -6,8 +6,13 @@ import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Portal MCP Dev",
+  title: "MCP Hub UI",
   description: "Portal para testar MCPs com LLMs publicos e internos.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

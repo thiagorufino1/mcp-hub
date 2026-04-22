@@ -1,6 +1,6 @@
 "use client";
 
-import { SendHorizontal, Square } from "lucide-react";
+import { SendHorizontal, Square } from "@/components/ui/icons";
 import { useEffect, useRef, useState } from "react";
 
 import { AudioRecorder } from "@/components/chat/audio-recorder";

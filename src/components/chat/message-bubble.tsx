@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, Check, Copy, ThumbsDown, ThumbsUp, User } from "lucide-react";
+import { Bot, Check, Copy, ThumbsDown, ThumbsUp, User } from "@/components/ui/icons";
 import { useState } from "react";
 
 import { MarkdownContent } from "@/components/chat/markdown-content";

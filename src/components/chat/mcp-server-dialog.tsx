@@ -1,8 +1,9 @@
 "use client";
 
-import { CheckCircle2, LoaderCircle, PencilLine, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, LoaderCircle, PencilLine, Plus, Trash2 } from "@/components/ui/icons";
 import { useEffect, useRef, useState } from "react";
 
+import { useAppPreferences } from "@/components/providers/app-preferences-provider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,12 +25,6 @@ type Props = {
   onSave: (server: McpServerConfig) => Promise<void>;
 };
 
-const transportOptions: Array<{ value: McpTransport; label: string; hint: string }> = [
-  { value: "stdio", label: "STDIO", hint: "Servidor MCP local via comando." },
-  { value: "sse", label: "SSE", hint: "Endpoint remoto Server-Sent Events." },
-  { value: "streamable-http", label: "HTTP", hint: "Servidor MCP HTTP moderno." },
-];
-
 type ArgItem = { id: string; value: string };
 type KVItem = { id: string; key: string; value: string };
 
@@ -46,6 +41,7 @@ function createDraft(server?: McpServerConfig | null) {
 }
 
 export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Props) {
+  const { t } = useAppPreferences();
   const firstFieldRef = useRef<HTMLInputElement | null>(null);
   const [draft] = useState(() => createDraft(initialServer));
   const [name, setName] = useState(draft.name);
@@ -57,6 +53,12 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
   const [headerItems, setHeaderItems] = useState<KVItem[]>(draft.headers);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const transportOptions: Array<{ value: McpTransport; label: string; hint: string }> = [
+    { value: "stdio", label: "STDIO", hint: t("mcp.stdio.hint") },
+    { value: "sse", label: "SSE", hint: t("mcp.sse.hint") },
+    { value: "streamable-http", label: "HTTP", hint: t("mcp.http.hint") },
+  ];
 
   useEffect(() => {
     if (!isOpen) {
@@ -82,17 +84,17 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
     const trimmedUrl = url.trim();
 
     if (!trimmedName) {
-      setError("Defina um nome para o MCP.");
+      setError(t("mcp.errorName"));
       return;
     }
 
     if (transport === "stdio" && !trimmedCommand) {
-      setError("Informe o comando do servidor MCP.");
+      setError(t("mcp.errorCommand"));
       return;
     }
 
     if (transport !== "stdio" && !trimmedUrl) {
-      setError("Informe a URL do servidor MCP.");
+      setError(t("mcp.errorUrl"));
       return;
     }
 
@@ -131,7 +133,7 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
       onClose();
     } catch (saveError) {
       setError(
-        saveError instanceof Error ? saveError.message : "Não foi possível validar o servidor MCP.",
+        saveError instanceof Error ? saveError.message : t("mcp.saveFailed"),
       );
       setIsSaving(false);
     }
@@ -140,7 +142,7 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
   const isEditing = Boolean(initialServer);
 
   function getUrlLabel() {
-    return transport === "sse" ? "SSE Endpoint URL" : "URL";
+    return transport === "sse" ? t("mcp.sseUrlLabel") : "URL";
   }
 
   return (
@@ -148,10 +150,10 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
       <DialogContent className="max-w-xl gap-0 overflow-hidden rounded-2xl border border-[#dbe4f1] bg-[var(--color-surface)] p-0 shadow-[0_20px_48px_rgba(15,23,42,0.10)]">
         <DialogHeader className="border-b border-[#dbe4f1] bg-[var(--color-surface)] px-6 py-4">
           <DialogTitle className="text-base font-semibold text-foreground">
-            {isEditing ? "Editar Servidor MCP" : "Adicionar Servidor MCP"}
+            {isEditing ? t("mcp.editTitle") : t("mcp.addTitle")}
           </DialogTitle>
           <DialogDescription className="pt-1 text-[13px] text-[var(--color-text-secondary)]">
-            Configure nome, transporte e parametros de conexao do servidor MCP.
+            {t("mcp.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -160,7 +162,7 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
           onSubmit={(event) => void handleSubmit(event)}
         >
           <div className="space-y-1.5">
-            <Label htmlFor="mcp-name" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Nome</Label>
+            <Label htmlFor="mcp-name" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("mcp.name")}</Label>
             <Input
               id="mcp-name"
               ref={firstFieldRef}
@@ -171,7 +173,7 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Transporte</Label>
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("mcp.transport")}</Label>
             <div className="flex rounded-2xl border border-[#dbe4f1] bg-[var(--color-surface-muted)] p-1 gap-1">
               {transportOptions.map((option) => {
                 const isSelected = transport === option.value;
@@ -199,7 +201,7 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
           {transport === "stdio" ? (
             <>
               <div className="space-y-1.5">
-                <Label htmlFor="mcp-command" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Comando Executável</Label>
+                <Label htmlFor="mcp-command" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("mcp.command")}</Label>
                 <Input
                   id="mcp-command"
                   value={command}
@@ -210,7 +212,7 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
 
               {/* Args List */}
               <div className="space-y-2">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Lista de Argumentos</Label>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("mcp.args")}</Label>
                 <div className="space-y-2">
                   {args.map((item, index) => (
                     <div key={item.id} className="flex items-center gap-2">
@@ -240,14 +242,14 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
                     onClick={() => setArgs([...args, { id: crypto.randomUUID(), value: "" }])}
                     className="w-full rounded-xl border-dashed border-[#dbe4f1] text-[12px] text-muted-foreground hover:bg-muted/50"
                   >
-                    <Plus className="mr-1 size-3.5" /> Adicionar argumento
+                    <Plus className="mr-1 size-3.5" /> {t("mcp.addArg")}
                   </Button>
                 </div>
               </div>
 
               {/* Env Variables List */}
               <div className="space-y-2 pt-2 border-t border-[#dbe4f1]">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Variáveis de Ambiente</Label>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("mcp.env")}</Label>
                 <div className="space-y-2">
                   {envItems.map((item, index) => (
                     <div key={item.id} className="flex flex-col sm:flex-row items-center gap-2">
@@ -287,7 +289,7 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
                     onClick={() => setEnvItems([...envItems, { id: crypto.randomUUID(), key: "", value: "" }])}
                     className="w-full rounded-xl border-dashed border-[#dbe4f1] text-[12px] text-muted-foreground hover:bg-muted/50"
                   >
-                    <Plus className="mr-1 size-3.5" /> Adicionar variável de ambiente
+                    <Plus className="mr-1 size-3.5" /> {t("mcp.addEnv")}
                   </Button>
                 </div>
               </div>
@@ -304,9 +306,9 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
                   className="h-10 text-[13px] rounded-xl border-[#dbe4f1] bg-[var(--color-surface)] shadow-[0_1px_4px_rgba(15,23,42,0.04)] focus-visible:border-[var(--color-primary)] focus-visible:ring-0"
                 />
               </div>
-              
+
               <div className="space-y-2 pt-2 border-t border-[#dbe4f1]">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Cabeçalhos HTTP (Headers)</Label>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("mcp.headers")}</Label>
                 <div className="space-y-2">
                   {headerItems.map((item, index) => (
                     <div key={item.id} className="flex flex-col sm:flex-row items-center gap-2">
@@ -346,7 +348,7 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
                     onClick={() => setHeaderItems([...headerItems, { id: crypto.randomUUID(), key: "", value: "" }])}
                     className="w-full rounded-xl border-dashed border-[#dbe4f1] text-[12px] text-muted-foreground hover:bg-muted/50"
                   >
-                    <Plus className="mr-1 size-3.5" /> Adicionar cabeçalho (Header)
+                    <Plus className="mr-1 size-3.5" /> {t("mcp.addHeader")}
                   </Button>
                 </div>
               </div>
@@ -371,7 +373,7 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
                 disabled={isSaving}
                 className="rounded-lg text-muted-foreground hover:text-foreground"
               >
-                Cancelar
+                {t("sidebar.cancel")}
               </Button>
               <Button
                 type="submit"
@@ -386,10 +388,10 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
                   <CheckCircle2 className="size-4" />
                 )}
                 {isSaving
-                  ? "Validando MCP…"
+                  ? t("mcp.validating")
                   : isEditing
-                    ? "Salvar"
-                    : "Adicionar"}
+                    ? t("sidebar.save")
+                    : t("sidebar.add")}
               </Button>
             </div>
           </DialogFooter>

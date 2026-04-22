@@ -1,4 +1,4 @@
-import { Activity, X, Terminal, CheckCircle2, XCircle, Loader2, Sparkles, MessageSquare, Trash2 } from "lucide-react";
+import { Activity, X, Terminal, CheckCircle2, XCircle, Loader2, Sparkles, MessageSquare, Trash2 } from "@/components/ui/icons";
 import { useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";

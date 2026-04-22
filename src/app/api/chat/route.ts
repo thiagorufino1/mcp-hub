@@ -4,10 +4,44 @@ import type { ToolSet } from "ai";
 import { z } from "zod";
 
 import { getModel } from "@/lib/ai-provider";
+import { createInspectableServerConfig, inspectMcpServer } from "@/lib/mcp-client";
 import { executeMcpTool } from "@/lib/mcp-client";
 import type { ChatStreamEvent, Message, TokenUsage } from "@/types/chat";
 import type { LLMConfig } from "@/types/llm-config";
 import type { McpServerConfig } from "@/types/mcp";
+
+const MCP_CHAT_SERVER_CACHE_TTL_MS = 12000;
+
+const McpServerSchema = z.object({
+  approvalMode: z.enum(["always", "never", "selected"]).optional().default("never"),
+  approvedToolNames: z.array(z.string()).optional().default([]),
+  args: z.array(z.string()).optional().default([]),
+  command: z.string().trim().optional(),
+  description: z.string().trim().optional(),
+  env: z.record(z.string(), z.string()).optional().default({}),
+  errorMessage: z.string().optional(),
+  headers: z.record(z.string(), z.string()).optional().default({}),
+  id: z.string().min(1),
+  lastCheckedAt: z.string().optional(),
+  name: z.string().trim().min(1),
+  tools: z.array(z.any()).optional().default([]),
+  transport: z.enum(["stdio", "sse", "streamable-http"]),
+  url: z.string().trim().optional(),
+  connectionStatus: z.enum(["pending", "connected", "error"]).optional().default("pending"),
+}).refine((data) => {
+  if (data.transport === "stdio" && (!data.command || data.command.length === 0)) {
+    return false;
+  }
+
+  return true;
+}, { message: "Informe o comando do servidor MCP.", path: ["command"] })
+  .refine((data) => {
+    if (data.transport !== "stdio" && (!data.url || data.url.length === 0)) {
+      return false;
+    }
+
+    return true;
+  }, { message: "Informe a URL do servidor MCP.", path: ["url"] });
 
 const ChatRequestBodySchema = z.object({
   customPrompt: z.string().max(8000).optional(),
@@ -21,7 +55,7 @@ const ChatRequestBodySchema = z.object({
     )
     .max(100)
     .optional(),
-  mcpServers: z.array(z.any()).optional(),
+  mcpServers: z.array(McpServerSchema).max(40).optional(),
   requestId: z.string().min(1).max(120).optional(),
   llmConfig: z.object({ provider: z.string() }).passthrough().optional(),
 });
@@ -96,6 +130,7 @@ async function streamWithAISDK(body: ChatRequestBody) {
 
         let hasText = false;
         let finalUsage: TokenUsage | undefined;
+        const resolvedServers = await resolveLiveMcpServers(body.mcpServers ?? []);
 
         const result = streamText({
           model: getModel(body.llmConfig as LLMConfig),
@@ -103,11 +138,11 @@ async function streamWithAISDK(body: ChatRequestBody) {
             userPrompt,
             body.customPrompt,
             body.messages ?? [],
-            body.mcpServers ?? [],
+            resolvedServers,
           ),
           stopWhen: stepCountIs(6),
           toolChoice: "auto",
-          tools: buildAiSdkTools(body.mcpServers ?? [], body.requestId, enqueue),
+          tools: buildAiSdkTools(resolvedServers, body.requestId, enqueue),
         });
 
         for await (const part of result.fullStream) {
@@ -168,6 +203,48 @@ async function streamWithAISDK(body: ChatRequestBody) {
       Connection: "keep-alive",
     },
   });
+}
+
+async function resolveLiveMcpServers(mcpServers: McpServerConfig[]) {
+  if (mcpServers.length === 0) {
+    return [];
+  }
+
+  const inspectedServers = await Promise.all(
+    mcpServers.map(async (server) => {
+      const lastCheckedAt = Number(server.lastCheckedAt);
+      const cacheIsFresh =
+        Number.isFinite(lastCheckedAt) &&
+        Date.now() - lastCheckedAt <= MCP_CHAT_SERVER_CACHE_TTL_MS;
+      const canReuseServerSnapshot =
+        server.connectionStatus === "connected" &&
+        server.tools.length > 0 &&
+        cacheIsFresh;
+
+      if (canReuseServerSnapshot) {
+        return server;
+      }
+
+      try {
+        const result = await inspectMcpServer(
+          createInspectableServerConfig({
+            ...server,
+            connectionStatus: "pending",
+            tools: [],
+          }),
+        );
+        return result.server;
+      } catch {
+        return {
+          ...server,
+          connectionStatus: "error" as const,
+          tools: [],
+        };
+      }
+    }),
+  );
+
+  return inspectedServers.filter((server) => server.connectionStatus === "connected");
 }
 
 function buildConversation(

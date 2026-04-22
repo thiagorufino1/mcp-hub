@@ -1,11 +1,12 @@
 "use client";
 
-import { Bot, CheckCircle2, LoaderCircle, PencilLine, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Bot, CheckCircle2, LoaderCircle, PencilLine, Plus, RefreshCw, Trash2 } from "@/components/ui/icons";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAppPreferences } from "@/components/providers/app-preferences-provider";
 import { LlmConfigDialog } from "./llm-config-dialog";
 import { ProviderForm, buildLLMConfig } from "@/components/setup/provider-form";
+import { ProviderLogo } from "@/components/setup/provider-logo";
 import { PROVIDERS, getProviderMeta } from "@/components/setup/provider-selector";
 import { Button } from "@/components/ui/button";
 import { cn, formatTokenCount } from "@/lib/utils";
@@ -113,13 +114,17 @@ export function LlmConfigSection({ value, onChange, usageTotals, usageState }: P
         <div className="overflow-hidden rounded-lg border border-border bg-[var(--color-surface)]">
           <div className="px-4 py-3.5">
             <div className="flex items-center gap-2">
-              <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold", providerMeta?.markClassName)}>
-                {providerMeta?.icon ?? providerMeta?.mark ?? "LLM"}
-              </div>
+              {providerMeta ? (
+                <ProviderLogo provider={providerMeta.id} className="size-8 shrink-0 rounded-xl" iconClassName="size-4" />
+              ) : (
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-border bg-white text-[10px] font-bold text-foreground shadow-sm">
+                  LLM
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-semibold text-foreground">{providerMeta?.name ?? "LLM"}</p>
                 <p className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground/70">
-                  {(value as any).model || (value as any).modelId || (value as any).deployment || "Configurado"}
+                  {(value as any).model || (value as any).modelId || (value as any).deployment || t("llm.configured")}
                 </p>
               </div>
               <div className="flex shrink-0 items-center">
@@ -186,14 +191,14 @@ export function LlmConfigSection({ value, onChange, usageTotals, usageState }: P
           style={{ background: HEADER_GRADIENT }}
         >
           <Plus className="size-3.5" />
-          Adicionar LLM
+          {t("llm.addTitle")}
         </Button>
       )}
 
       {value && (
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]/45 px-3 py-2.5">
           <p className="text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
-            Tokens Utilizados
+            {t("llm.tokensUsed")}
           </p>
           <div className="mt-2 grid grid-cols-3 gap-1.5">
             {tokenItems.map((item) => (

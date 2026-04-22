@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, ChevronDown, LoaderCircle, Wrench } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronDown, LoaderCircle, Wrench } from "@/components/ui/icons";
 import { useMemo, useState } from "react";
 
 import { useAppPreferences } from "@/components/providers/app-preferences-provider";
@@ -91,7 +91,7 @@ export function ToolActivityCard({ event }: { event: ToolEvent }) {
             {event.argsText ? (
               <div>
                 <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("tool.arguments")}</p>
-                <pre className="app-scroll max-h-[120px] overflow-x-auto rounded-[14px] border border-[var(--color-border)] bg-[#f8fbff] px-3 py-2 text-[11px] text-slate-600 dark:bg-[#0f2234] dark:text-slate-300">
+                <pre className="app-scroll max-h-[120px] overflow-x-auto rounded-[14px] border border-[var(--color-border)] bg-white px-3 py-2 text-[11px] text-slate-600 dark:bg-white dark:text-slate-700">
                   {event.argsText}
                 </pre>
               </div>
@@ -100,7 +100,7 @@ export function ToolActivityCard({ event }: { event: ToolEvent }) {
             {event.summary ? (
               <div>
                 <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("tool.result")}</p>
-                <pre className="app-scroll max-h-[260px] overflow-y-auto break-all whitespace-pre-wrap rounded-[14px] border border-[var(--color-border)] bg-[#f8fbff] px-3 py-2 font-mono text-[11px] leading-5 text-slate-600 dark:bg-[#0f2234] dark:text-slate-300">
+                <pre className="app-scroll max-h-[260px] overflow-y-auto break-all whitespace-pre-wrap rounded-[14px] border border-[var(--color-border)] bg-white px-3 py-2 font-mono text-[11px] leading-5 text-slate-600 dark:bg-white dark:text-slate-700">
                   {formattedSummary}
                 </pre>
               </div>

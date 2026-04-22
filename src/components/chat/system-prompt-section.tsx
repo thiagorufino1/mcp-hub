@@ -1,6 +1,6 @@
 "use client";
 
-import { BookText, CheckCircle2, PencilLine, Plus, Trash2 } from "lucide-react";
+import { BookText, CheckCircle2, PencilLine, Plus, Trash2 } from "@/components/ui/icons";
 import { useState } from "react";
 
 import { useAppPreferences } from "@/components/providers/app-preferences-provider";

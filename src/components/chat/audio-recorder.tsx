@@ -1,6 +1,6 @@
 "use client";
 
-import { Mic, Square, Trash2 } from "lucide-react";
+import { Mic, Square, Trash2 } from "@/components/ui/icons";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { useAppPreferences } from "@/components/providers/app-preferences-provider";

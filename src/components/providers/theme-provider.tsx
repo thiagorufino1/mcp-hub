@@ -22,23 +22,6 @@ const THEME_STORAGE_KEY = "theme";
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function getInitialTheme(): ThemeMode {
-  if (typeof window === "undefined") {
-    return "system";
-  }
-
-  try {
-    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-    if (storedTheme === "light" || storedTheme === "dark" || storedTheme === "system") {
-      return storedTheme;
-    }
-  } catch {
-    // ignore
-  }
-
-  return "system";
-}
-
 function getSystemTheme(): ResolvedTheme {
   if (typeof window === "undefined") {
     return "light";
@@ -63,11 +46,23 @@ function applyTheme(theme: ThemeMode) {
 }
 
 export function ThemeProvider({ children }: PropsWithChildren) {
-  const [theme, setThemeState] = useState<ThemeMode>(getInitialTheme);
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
-    const initialTheme = getInitialTheme();
-    return initialTheme === "system" ? getSystemTheme() : initialTheme;
-  });
+  const [theme, setThemeState] = useState<ThemeMode>("system");
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light");
+  const [hasLoadedTheme, setHasLoadedTheme] = useState(false);
+
+  useEffect(() => {
+    try {
+      const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+      if (storedTheme === "light" || storedTheme === "dark" || storedTheme === "system") {
+        setThemeState(storedTheme);
+        setResolvedTheme(storedTheme === "system" ? getSystemTheme() : storedTheme);
+      }
+    } catch {
+      // Ignore storage failures.
+    } finally {
+      setHasLoadedTheme(true);
+    }
+  }, []);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -99,6 +94,18 @@ export function ThemeProvider({ children }: PropsWithChildren) {
     }),
     [resolvedTheme, theme],
   );
+
+  useEffect(() => {
+    if (!hasLoadedTheme) {
+      return;
+    }
+
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {
+      // Ignore storage failures.
+    }
+  }, [hasLoadedTheme, theme]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

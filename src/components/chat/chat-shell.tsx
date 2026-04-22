@@ -25,6 +25,10 @@ const CUSTOM_PROMPT_KEY = "ai-chat-custom-prompt";
 const STORAGE_VERSION_KEY = "ai-chat-ui-version";
 const STORAGE_BACKUP_PREFIX = "ai-chat-storage-backup";
 const STORAGE_VERSION = "2026-03-30-ui-refresh-5";
+const MCP_REVALIDATION_INTERVAL_MS = 20000;
+const MCP_REVALIDATION_FOCUS_DEBOUNCE_MS = 1500;
+const MCP_REVALIDATION_ERROR_BACKOFF_MS = 45000;
+const MCP_CHAT_SERVER_CACHE_TTL_MS = 12000;
 
 type ThreadItem =
   | { id: string; type: "message"; value: Message }
@@ -126,6 +130,9 @@ export function ChatShell() {
   const currentRequestIdRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const hasRevalidatedStoredServersRef = useRef(false);
+  const isRevalidatingServersRef = useRef(false);
+  const nextAllowedRevalidationAtRef = useRef<Record<string, number>>({});
+  const focusRevalidationTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     try {
@@ -143,9 +150,7 @@ export function ChatShell() {
               previousVersion: storedVersion,
             }),
           );
-          setStorageNotice(
-            "Seu historico local foi reiniciado por uma atualizacao da interface. Uma copia de seguranca foi salva no navegador.",
-          );
+          setStorageNotice(t("chat.storageReset"));
         }
         localStorage.removeItem(MESSAGE_STORAGE_KEY);
         localStorage.removeItem(TOOL_EVENT_STORAGE_KEY);
@@ -203,7 +208,7 @@ export function ChatShell() {
     }
 
     setIsHydrated(true);
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     try {
@@ -237,7 +242,7 @@ export function ChatShell() {
         ...current,
       ];
     });
-  }, [storageNotice]);
+  }, [storageNotice, t]);
 
   useEffect(() => {
     setMessages((current) => {
@@ -339,14 +344,14 @@ export function ChatShell() {
         const date = new Date(item.value.createdAt).toLocaleString();
         sessionText += `[TOOL] ${item.value.tool} (${date})\nStatus: ${item.value.status}\n`;
         if (item.value.argsText) {
-          sessionText += `Argumentos:\n${item.value.argsText}\n`;
+          sessionText += `${t("chat.argLabel")}\n${item.value.argsText}\n`;
         }
         if (item.value.summary) {
           let summaryToPrint = item.value.summary;
           try {
             summaryToPrint = JSON.stringify(JSON.parse(item.value.summary), null, 2);
           } catch { }
-          sessionText += `Resultado:\n${summaryToPrint}\n`;
+          sessionText += `${t("chat.resultLabel")}\n${summaryToPrint}\n`;
         }
         sessionText += "\n";
       }
@@ -370,19 +375,70 @@ export function ChatShell() {
 
     if (!("server" in payload)) {
       const errorMessage = "error" in payload ? payload.error : undefined;
-      throw new Error(errorMessage ?? "Não foi possível validar o servidor MCP.");
+      throw new Error(errorMessage ?? t("chat.mcpValidateFailed"));
     }
 
     return {
       ok: response.ok && payload.server.connectionStatus === "connected",
       server: payload.server,
     };
-  }, []);
+  }, [t]);
+
+  const revalidateServers = useCallback(async (
+    servers: McpServerConfig[],
+    options?: { silent?: boolean },
+  ) => {
+    if (servers.length === 0 || isRevalidatingServersRef.current) {
+      return servers;
+    }
+
+    isRevalidatingServersRef.current = true;
+    const serverIds = servers.map((server) => server.id);
+    if (!options?.silent) {
+      setRetestingServerIds((current) => [...new Set([...current, ...serverIds])]);
+    }
+
+    try {
+      const results = await Promise.all(
+        servers.map(async (server) => {
+          try {
+            return await inspectServer(server);
+          } catch {
+            return { ok: false, server: { ...server, connectionStatus: "error" as const, tools: [] } };
+          }
+        }),
+      );
+
+      const inspectedServers = results.map((result) => result.server);
+      const byId = new Map(inspectedServers.map((server) => [server.id, server]));
+
+      setMcpServers((current) =>
+        current.map((server) => byId.get(server.id) ?? server),
+      );
+
+      const nextAllowed = { ...nextAllowedRevalidationAtRef.current };
+      const now = Date.now();
+      for (const server of inspectedServers) {
+        nextAllowed[server.id] =
+          server.connectionStatus === "connected"
+            ? 0
+            : now + MCP_REVALIDATION_ERROR_BACKOFF_MS;
+      }
+      nextAllowedRevalidationAtRef.current = nextAllowed;
+
+      return inspectedServers;
+    } finally {
+      isRevalidatingServersRef.current = false;
+      if (!options?.silent) {
+        setRetestingServerIds((current) => current.filter((id) => !serverIds.includes(id)));
+      }
+    }
+  }, [inspectServer]);
 
   async function handleSaveServer(server: McpServerConfig) {
     const result = await inspectServer(server);
     if (!result.ok) {
-      throw new Error(result.server.errorMessage ?? "Falha ao conectar ao MCP.");
+      throw new Error(result.server.errorMessage ?? t("chat.mcpConnectFailed"));
     }
     const inspectedServer = result.server;
 
@@ -402,17 +458,7 @@ export function ChatShell() {
     const target = mcpServers.find((server) => server.id === serverId);
     if (!target) return;
 
-    setRetestingServerIds((current) => [...current, serverId]);
-
-    try {
-      const result = await inspectServer(target);
-      const inspectedServer = result.server;
-      setMcpServers((current) =>
-        current.map((server) => (server.id === serverId ? inspectedServer : server)),
-      );
-    } finally {
-      setRetestingServerIds((current) => current.filter((id) => id !== serverId));
-    }
+    await revalidateServers([target]);
   }
 
   useEffect(() => {
@@ -421,20 +467,59 @@ export function ChatShell() {
     }
 
     hasRevalidatedStoredServersRef.current = true;
-    const serverIds = mcpServers.map((server) => server.id);
-    setRetestingServerIds((current) => [...new Set([...current, ...serverIds])]);
+    void revalidateServers(mcpServers);
+  }, [isHydrated, mcpServers, revalidateServers]);
 
-    void Promise.all(mcpServers.map((server) => inspectServer(server)))
-      .then((results) => {
-        const byId = new Map(results.map((result) => [result.server.id, result.server]));
-        setMcpServers((current) =>
-          current.map((server) => byId.get(server.id) ?? server),
+  useEffect(() => {
+    if (!isHydrated || mcpServers.length === 0) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      const now = Date.now();
+      const dueServers = mcpServers.filter(
+        (server) => now >= (nextAllowedRevalidationAtRef.current[server.id] ?? 0),
+      );
+      if (dueServers.length === 0) {
+        return;
+      }
+      void revalidateServers(dueServers);
+    }, MCP_REVALIDATION_INTERVAL_MS);
+
+    const handleFocus = () => {
+      if (document.visibilityState === "hidden") {
+        return;
+      }
+
+      if (focusRevalidationTimeoutRef.current) {
+        window.clearTimeout(focusRevalidationTimeoutRef.current);
+      }
+
+      focusRevalidationTimeoutRef.current = window.setTimeout(() => {
+        const now = Date.now();
+        const dueServers = mcpServers.filter(
+          (server) => now >= (nextAllowedRevalidationAtRef.current[server.id] ?? 0),
         );
-      })
-      .finally(() => {
-        setRetestingServerIds((current) => current.filter((id) => !serverIds.includes(id)));
-      });
-  }, [inspectServer, isHydrated, mcpServers]);
+        if (dueServers.length === 0) {
+          return;
+        }
+
+        void revalidateServers(dueServers);
+      }, MCP_REVALIDATION_FOCUS_DEBOUNCE_MS);
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
+    return () => {
+      window.clearInterval(intervalId);
+      if (focusRevalidationTimeoutRef.current) {
+        window.clearTimeout(focusRevalidationTimeoutRef.current);
+      }
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
+  }, [isHydrated, mcpServers, revalidateServers]);
 
   function handleRemoveServer(serverId: string) {
     setMcpServers((current) => current.filter((server) => server.id !== serverId));
@@ -445,6 +530,10 @@ export function ChatShell() {
       return false;
     }
 
+    const resolvedServers =
+      mcpServers.length > 0
+        ? await revalidateServers(mcpServers, { silent: true })
+        : [];
     const requestId = `request-${crypto.randomUUID()}`;
     currentRequestIdRef.current = requestId;
 
@@ -466,11 +555,15 @@ export function ChatShell() {
     abortControllerRef.current = controller;
 
     try {
+      const now = Date.now();
       const response = await fetch("/api/chat", {
         body: JSON.stringify({
           customPrompt: systemPrompts.find((p) => p.id === activePromptId)?.content || undefined,
           llmConfig: llmConfig ?? undefined,
-          mcpServers,
+          mcpServers: resolvedServers.map((server) => ({
+            ...server,
+            lastCheckedAt: now.toString(),
+          })),
           message: content,
           messages: nextMessages.map((message) => ({
             content: message.content,
@@ -487,7 +580,7 @@ export function ChatShell() {
         const errorText = await response.text();
         applyStreamEvent({
           type: "error",
-          message: errorText || `Falha HTTP ${response.status}.`,
+          message: errorText || `HTTP ${response.status}`,
         });
         return false;
       }
@@ -495,7 +588,7 @@ export function ChatShell() {
       if (!response.body) {
         applyStreamEvent({
           type: "error",
-          message: "O backend nao retornou conteudo de resposta.",
+          message: t("chat.noResponseBody"),
         });
         return false;
       }
@@ -525,7 +618,7 @@ export function ChatShell() {
         applyStreamEvent({
           type: "error",
           message:
-            error instanceof Error ? error.message : "Falha ao consumir o stream de resposta.",
+            error instanceof Error ? error.message : t("chat.streamFailed"),
         });
       }
 
@@ -633,7 +726,7 @@ export function ChatShell() {
         break;
       case "error":
         const pendingAssistantId = currentAssistantIdRef.current;
-        const errorMessage = `Falha ao processar a solicitacao: ${event.message}`;
+        const errorMessage = `${t("chat.requestFailed")}: ${event.message}`;
         currentAssistantIdRef.current = null;
         currentRequestIdRef.current = null;
         setMessages((current) => {
@@ -682,7 +775,7 @@ export function ChatShell() {
       });
 
       if (!response.ok) {
-        throw new Error(`Falha HTTP ${response.status}`);
+        throw new Error(`HTTP ${response.status}`);
       }
     } catch {
       setMessages((current) =>
@@ -690,7 +783,7 @@ export function ChatShell() {
           message.id === messageId ? { ...message, feedback: previousFeedback } : message,
         ),
       );
-      setFeedbackError("Não foi possível registrar seu feedback. Tente novamente.");
+      setFeedbackError(t("chat.feedbackError"));
       window.setTimeout(() => setFeedbackError(null), 4000);
     }
   }
@@ -727,7 +820,7 @@ export function ChatShell() {
           ? {
             ...message,
             content:
-              message.content.trim() || "Geração interrompida antes de produzir conteúdo.",
+              message.content.trim() || t("chat.stoppedEmpty"),
             status: "stopped",
           }
           : message,

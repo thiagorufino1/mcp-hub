@@ -1,3 +1,11 @@
+import { useState } from "react";
+
+import { LlmConfigSection } from "@/components/chat/llm-config-section";
+import { SystemPromptSection } from "@/components/chat/system-prompt-section";
+import type { SystemPrompt } from "@/components/chat/system-prompt-section";
+import { useAppPreferences } from "@/components/providers/app-preferences-provider";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Cable,
   CheckCircle2,
@@ -11,15 +19,7 @@ import {
   Trash2,
   XCircle,
   Zap,
-} from "lucide-react";
-import { useState } from "react";
-
-import { LlmConfigSection } from "@/components/chat/llm-config-section";
-import { SystemPromptSection } from "@/components/chat/system-prompt-section";
-import type { SystemPrompt } from "@/components/chat/system-prompt-section";
-import { useAppPreferences } from "@/components/providers/app-preferences-provider";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+} from "@/components/ui/icons";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { LLMConfig } from "@/types/llm-config";
@@ -67,6 +67,8 @@ function ConnectionBadge({
   const { t } = useAppPreferences();
 
   if (isRetesting) {
+    const label = status === "error" ? t("sidebar.reconnecting") : t("sidebar.validating");
+
     return (
       <span
         className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium"
@@ -77,7 +79,7 @@ function ConnectionBadge({
         }}
       >
         <LoaderCircle className="size-3 animate-spin" />
-        {t("sidebar.validating")}
+        {label}
       </span>
     );
   }
@@ -141,6 +143,9 @@ function ServerCard({
   const { t } = useAppPreferences();
   const meta = getTransportMeta(server);
   const TransportIcon = meta.icon;
+  const retestLabel = isRetesting && server.connectionStatus === "error"
+    ? `${t("sidebar.reconnecting")} ${server.name}`
+    : `${t("sidebar.validating")} ${server.name}`;
 
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-[var(--color-surface)]">
@@ -159,7 +164,7 @@ function ServerCard({
               className="size-6 rounded-full text-muted-foreground/40 hover:text-foreground"
               disabled={isRetesting}
               onClick={() => onRetestServer(server.id)}
-              aria-label={`${t("sidebar.validating")} ${server.name}`}
+              aria-label={retestLabel}
             >
               {isRetesting ? <LoaderCircle className="size-3 animate-spin" /> : <RefreshCw className="size-3" />}
             </Button>

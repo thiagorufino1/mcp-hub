@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ClipboardList, Layers3, MapPinned, RadioTower } from "lucide-react";
+import { ArrowRight, ClipboardList, Layers3, MapPinned, RadioTower } from "@/components/ui/icons";
 
 import { useAppPreferences } from "@/components/providers/app-preferences-provider";
 

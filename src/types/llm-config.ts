@@ -15,7 +15,12 @@ export type LLMConfig =
       modelId: string;
     }
   | { provider: "google"; apiKey: string; model: string }
-  | { provider: "ollama"; baseUrl: string; model: string };
+  | { provider: "ollama"; baseUrl: string; model: string }
+  | { provider: "anthropic"; apiKey: string; model: string }
+  | { provider: "groq"; apiKey: string; model: string }
+  | { provider: "xai"; apiKey: string; model: string }
+  | { provider: "mistral"; apiKey: string; model: string }
+  | { provider: "deepseek"; apiKey: string; model: string };
 
 export const LLM_CONFIG_STORAGE_KEY = "mcp-portal-llm-config";
 export const LLM_CONFIGURED_COOKIE = "mcp-portal-configured";

@@ -1,10 +1,11 @@
 "use client";
 
-import { CheckCircle2, LoaderCircle, PencilLine, RefreshCw } from "lucide-react";
+import { CheckCircle2, LoaderCircle, PencilLine, RefreshCw } from "@/components/ui/icons";
 import { useState, useEffect } from "react";
 
 import { useAppPreferences } from "@/components/providers/app-preferences-provider";
 import { ProviderForm, buildLLMConfig } from "@/components/setup/provider-form";
+import { ProviderLogo } from "@/components/setup/provider-logo";
 import { PROVIDERS } from "@/components/setup/provider-selector";
 import { Button } from "@/components/ui/button";
 import {
@@ -121,17 +122,17 @@ export function LlmConfigDialog({ initialConfig, isOpen, onClose, onSave }: Prop
       <DialogContent className="max-w-xl gap-0 overflow-hidden rounded-2xl border border-[#dbe4f1] bg-[var(--color-surface)] p-0 shadow-[0_20px_48px_rgba(15,23,42,0.10)]">
         <DialogHeader className="border-b border-[#dbe4f1] bg-[var(--color-surface)] px-6 py-4">
           <DialogTitle className="text-base font-semibold text-foreground">
-            {initialConfig ? "Editar Configuração LLM" : "Adicionar LLM"}
+            {initialConfig ? t("llm.editTitle") : t("llm.addTitle")}
           </DialogTitle>
           <DialogDescription className="pt-1 text-[13px] text-[var(--color-text-secondary)]">
-            Escolha provedor, informe credenciais e teste conexao antes de salvar.
+            {t("llm.description")}
           </DialogDescription>
         </DialogHeader>
 
         <form className="app-scroll flex max-h-[calc(90vh-160px)] flex-col gap-5 overflow-y-auto bg-[var(--color-bg)] px-6 py-5" onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Provedor</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1 rounded-2xl border border-[#dbe4f1] bg-[var(--color-surface-muted)] p-1">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("llm.provider")}</Label>
+            <div className="grid grid-cols-3 gap-2 rounded-2xl border border-[#dbe4f1] bg-[var(--color-surface-muted)] p-2 sm:grid-cols-4 md:grid-cols-5">
               {PROVIDERS.map((provider) => {
                 const isSelected = selectedProvider === provider.id;
                 return (
@@ -140,17 +141,27 @@ export function LlmConfigDialog({ initialConfig, isOpen, onClose, onSave }: Prop
                     type="button"
                     onClick={() => handleProviderSelect(provider.id)}
                     className={cn(
-                      "flex flex-col items-center justify-center rounded-xl py-2 px-1 text-center transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      "flex min-h-[88px] flex-col items-center justify-center rounded-2xl border px-2 py-3 text-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       isSelected
-                        ? "bg-[var(--color-surface)] shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
-                        : "hover:bg-[var(--color-surface)]/60",
+                        ? "border-sky-200 bg-white shadow-[0_10px_24px_rgba(15,23,42,0.10)] ring-1 ring-sky-100"
+                        : "border-transparent bg-transparent hover:border-white/80 hover:bg-white/70 hover:shadow-[0_6px_18px_rgba(15,23,42,0.06)]",
                     )}
                   >
-                    <span className={cn("flex size-7 items-center justify-center rounded-full text-[10px] font-bold mb-1", provider.markClassName)}>
-                      {provider.icon || provider.mark}
-                    </span>
-                    <span className={cn("text-[11px] font-semibold truncate w-full", isSelected ? "text-foreground" : "text-muted-foreground")}>
-                      {provider.name}
+                    <ProviderLogo
+                      provider={provider.id}
+                      className={cn(
+                        "mb-2 size-12 rounded-2xl transition-transform duration-200",
+                        isSelected && "scale-105"
+                      )}
+                      iconClassName="size-6"
+                    />
+                    <span
+                      className={cn(
+                        "w-full text-[12px] font-semibold leading-tight",
+                        isSelected ? "text-slate-950" : "text-slate-700"
+                      )}
+                    >
+                      {provider.shortName}
                     </span>
                   </button>
                 );
@@ -199,7 +210,7 @@ export function LlmConfigDialog({ initialConfig, isOpen, onClose, onSave }: Prop
                 disabled={isSaving}
                 className="rounded-lg text-muted-foreground hover:text-foreground"
               >
-                Cancelar
+                {t("sidebar.cancel")}
               </Button>
               <Button
                 type="submit"
@@ -207,7 +218,7 @@ export function LlmConfigDialog({ initialConfig, isOpen, onClose, onSave }: Prop
                 className="rounded-lg bg-[var(--color-primary)] text-white shadow-none hover:bg-[var(--color-primary-hover)]"
               >
                 {isSaving ? <LoaderCircle className="size-4 animate-spin" /> : initialConfig ? <PencilLine className="size-4" /> : <CheckCircle2 className="size-4" />}
-                {isSaving ? t("sidebar.saving") : initialConfig ? "Salvar" : "Adicionar"}
+                {isSaving ? t("sidebar.saving") : initialConfig ? t("sidebar.save") : t("sidebar.add")}
               </Button>
             </div>
           </DialogFooter>

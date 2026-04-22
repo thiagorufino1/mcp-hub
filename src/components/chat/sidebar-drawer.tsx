@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X } from "@/components/ui/icons";
 import { useEffect, useId, useRef } from "react";
 
 import { SidebarToolsContent } from "@/components/chat/sidebar-tools";

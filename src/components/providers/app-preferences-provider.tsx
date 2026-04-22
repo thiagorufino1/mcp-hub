@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type PropsWith
 
 import { translate, type AppLocale, type TranslationKey } from "@/lib/i18n";
 
-const LOCALE_STORAGE_KEY = "ai-chat-locale";
+export const LOCALE_STORAGE_KEY = "ai-chat-locale";
 
 type AppPreferencesContextValue = {
   locale: AppLocale;
@@ -14,30 +14,35 @@ type AppPreferencesContextValue = {
 
 const AppPreferencesContext = createContext<AppPreferencesContextValue | null>(null);
 
-function getInitialLocale(): AppLocale {
-  if (typeof window === "undefined") {
-    return "en";
-  }
-
-  try {
-    const storedLocale = localStorage.getItem(LOCALE_STORAGE_KEY);
-    return storedLocale === "pt-BR" || storedLocale === "en" ? storedLocale : "en";
-  } catch {
-    return "en";
-  }
-}
-
 export function AppPreferencesProvider({ children }: PropsWithChildren) {
-  const [locale, setLocale] = useState<AppLocale>(getInitialLocale);
+  const [locale, setLocale] = useState<AppLocale>("en");
+  const [hasLoadedLocale, setHasLoadedLocale] = useState(false);
+
+  useEffect(() => {
+    try {
+      const storedLocale = localStorage.getItem(LOCALE_STORAGE_KEY);
+      if (storedLocale === "pt-BR" || storedLocale === "en") {
+        setLocale(storedLocale);
+      }
+    } catch {
+      // Ignore storage failures.
+    } finally {
+      setHasLoadedLocale(true);
+    }
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = locale;
+    if (!hasLoadedLocale) {
+      return;
+    }
+
     try {
       localStorage.setItem(LOCALE_STORAGE_KEY, locale);
     } catch {
       // Ignore storage failures.
     }
-  }, [locale]);
+  }, [hasLoadedLocale, locale]);
 
   const value = useMemo<AppPreferencesContextValue>(
     () => ({

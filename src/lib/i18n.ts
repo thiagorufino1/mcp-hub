@@ -21,6 +21,7 @@ export type TranslationKey =
   | "sidebar.disconnected"
   | "sidebar.failed"
   | "sidebar.pending"
+  | "sidebar.reconnecting"
   | "sidebar.localCommand"
   | "sidebar.remoteEndpoint"
   | "sidebar.connectionFailed"
@@ -123,7 +124,52 @@ export type TranslationKey =
   | "tool.remoteImage"
   | "tool.previewFailed"
   | "tool.openImage"
-  | "tool.imageAlt";
+  | "tool.imageAlt"
+  // MCP Dialog
+  | "mcp.editTitle"
+  | "mcp.addTitle"
+  | "mcp.description"
+  | "mcp.name"
+  | "mcp.transport"
+  | "mcp.command"
+  | "mcp.args"
+  | "mcp.addArg"
+  | "mcp.env"
+  | "mcp.addEnv"
+  | "mcp.headers"
+  | "mcp.addHeader"
+  | "mcp.validating"
+  | "mcp.sseUrlLabel"
+  | "mcp.errorName"
+  | "mcp.errorCommand"
+  | "mcp.errorUrl"
+  | "mcp.saveFailed"
+  | "mcp.stdio.hint"
+  | "mcp.sse.hint"
+  | "mcp.http.hint"
+  // LLM Dialog / Section
+  | "llm.editTitle"
+  | "llm.addTitle"
+  | "llm.description"
+  | "llm.provider"
+  | "llm.configured"
+  | "llm.tokensUsed"
+  // Chat Shell
+  | "chat.storageReset"
+  | "chat.argLabel"
+  | "chat.resultLabel"
+  | "chat.mcpValidateFailed"
+  | "chat.mcpConnectFailed"
+  | "chat.noResponseBody"
+  | "chat.streamFailed"
+  | "chat.feedbackError"
+  | "chat.stoppedEmpty"
+  | "chat.requestFailed"
+  // Error Boundary
+  | "error.title"
+  | "error.retry"
+  // Topbar
+  | "topbar.githubLabel";
 
 type TranslationTable = Record<TranslationKey, string>;
 
@@ -149,16 +195,17 @@ export const translations: Record<AppLocale, TranslationTable> = {
     "sidebar.disconnected": "Desconectado",
     "sidebar.failed": "Falha",
     "sidebar.pending": "Pendente",
+    "sidebar.reconnecting": "Reconectando",
     "sidebar.localCommand": "Comando local",
     "sidebar.remoteEndpoint": "Endpoint remoto",
     "sidebar.connectionFailed": "Falha de conexão com o endpoint.",
     "sidebar.noTools": "O servidor não expôs nenhuma ferramenta.",
-    "sidebar.hideTools": "Ocultar tools",
-    "sidebar.showTools": "Ver tools",
+    "sidebar.hideTools": "Ocultar ferramentas",
+    "sidebar.showTools": "Ver ferramentas",
     "sidebar.promptTitle": "Instruções",
     "sidebar.addPrompt": "Adicionar instruções",
     "sidebar.promptActive": "Ativa",
-    "sidebar.promptHint": "Edite esse bloco para ajustar o comportamento base do agente sem mudar a cor do app.",
+    "sidebar.promptHint": "Edite este bloco para ajustar o comportamento base do agente sem alterar o estilo do app.",
     "sidebar.editPrompt": "Editar prompt",
     "sidebar.removePrompt": "Remover prompt",
     "sidebar.promptDialogTitle": "Instruções",
@@ -173,7 +220,7 @@ export const translations: Record<AppLocale, TranslationTable> = {
     "sidebar.ready": "Pronta",
     "sidebar.llmHint": "Clique no lápis para editar ou no refresh para validar.",
     "sidebar.selectProvider": "Selecionar provedor",
-    "sidebar.chooseProvider": "Escolha um provider para configurar a conexão",
+    "sidebar.chooseProvider": "Escolha um provedor para configurar a conexão",
     "sidebar.testConnection": "Testar conexão LLM",
     "sidebar.editConnection": "Editar conexão LLM",
     "sidebar.removeConnection": "Remover conexão LLM",
@@ -219,9 +266,9 @@ export const translations: Record<AppLocale, TranslationTable> = {
     "message.helpful": "Útil",
     "message.notHelpful": "Não útil",
     "message.responseCopied": "Resposta copiada.",
-    "starters.eyebrow": "Empty state",
-    "starters.title": "Comece com fluxo real, não com tela vazia.",
-    "starters.description": "Dispare perguntas úteis para validar conexão, ferramentas e comportamento base do agente logo no primeiro minuto.",
+    "starters.eyebrow": "Estado inicial",
+    "starters.title": "Comece com um fluxo real, não com uma tela vazia.",
+    "starters.description": "Dispare perguntas úteis para validar a conexão, as ferramentas e o comportamento base do agente logo no primeiro minuto.",
     "starters.workspace.label": "Panorama do workspace",
     "starters.workspace.prompt": "Me dê um panorama do workspace MCP, dos servidores conectados e do que já posso testar.",
     "starters.flow.label": "Configurar primeiro fluxo",
@@ -251,7 +298,52 @@ export const translations: Record<AppLocale, TranslationTable> = {
     "tool.remoteImage": "Imagem remota",
     "tool.previewFailed": "Não foi possível carregar preview.",
     "tool.openImage": "Abrir imagem",
-    "tool.imageAlt": "Preview da imagem retornada pela tool",
+    "tool.imageAlt": "Pré-visualização da imagem retornada pela ferramenta",
+    // MCP Dialog
+    "mcp.editTitle": "Editar Servidor MCP",
+    "mcp.addTitle": "Adicionar Servidor MCP",
+    "mcp.description": "Configure o nome, o transporte e os parâmetros de conexão do servidor MCP.",
+    "mcp.name": "Nome",
+    "mcp.transport": "Transporte",
+    "mcp.command": "Comando Executável",
+    "mcp.args": "Lista de Argumentos",
+    "mcp.addArg": "Adicionar argumento",
+    "mcp.env": "Variáveis de Ambiente",
+    "mcp.addEnv": "Adicionar variável de ambiente",
+    "mcp.headers": "Cabeçalhos HTTP",
+    "mcp.addHeader": "Adicionar cabeçalho",
+    "mcp.validating": "Validando MCP…",
+    "mcp.sseUrlLabel": "URL do Endpoint SSE",
+    "mcp.errorName": "Defina um nome para o MCP.",
+    "mcp.errorCommand": "Informe o comando do servidor MCP.",
+    "mcp.errorUrl": "Informe a URL do servidor MCP.",
+    "mcp.saveFailed": "Não foi possível validar o servidor MCP.",
+    "mcp.stdio.hint": "Servidor MCP local executado via comando.",
+    "mcp.sse.hint": "Endpoint remoto via Server-Sent Events.",
+    "mcp.http.hint": "Servidor MCP via HTTP com streaming.",
+    // LLM Dialog / Section
+    "llm.editTitle": "Editar Configuração LLM",
+    "llm.addTitle": "Adicionar LLM",
+    "llm.description": "Escolha o provedor, informe as credenciais e teste a conexão antes de salvar.",
+    "llm.provider": "Provedor",
+    "llm.configured": "Configurado",
+    "llm.tokensUsed": "Tokens Utilizados",
+    // Chat Shell
+    "chat.storageReset": "Seu histórico local foi reiniciado por uma atualização da interface. Uma cópia de segurança foi salva no navegador.",
+    "chat.argLabel": "Argumentos:",
+    "chat.resultLabel": "Resultado:",
+    "chat.mcpValidateFailed": "Não foi possível validar o servidor MCP.",
+    "chat.mcpConnectFailed": "Falha ao conectar ao MCP.",
+    "chat.noResponseBody": "O backend não retornou conteúdo de resposta.",
+    "chat.streamFailed": "Falha ao consumir o stream de resposta.",
+    "chat.feedbackError": "Não foi possível registrar seu feedback. Tente novamente.",
+    "chat.stoppedEmpty": "Geração interrompida antes de produzir conteúdo.",
+    "chat.requestFailed": "Falha ao processar a solicitação",
+    // Error Boundary
+    "error.title": "Algo deu errado",
+    "error.retry": "Tentar novamente",
+    // Topbar
+    "topbar.githubLabel": "Abrir repositório no GitHub",
   },
   en: {
     "app.name": "mcp-hub-ui",
@@ -274,6 +366,7 @@ export const translations: Record<AppLocale, TranslationTable> = {
     "sidebar.disconnected": "Disconnected",
     "sidebar.failed": "Failed",
     "sidebar.pending": "Pending",
+    "sidebar.reconnecting": "Reconnecting",
     "sidebar.localCommand": "Local command",
     "sidebar.remoteEndpoint": "Remote endpoint",
     "sidebar.connectionFailed": "Connection to endpoint failed.",
@@ -283,11 +376,11 @@ export const translations: Record<AppLocale, TranslationTable> = {
     "sidebar.promptTitle": "Instructions",
     "sidebar.addPrompt": "Add instructions",
     "sidebar.promptActive": "Active",
-    "sidebar.promptHint": "Edit this block to adjust base agent behavior without changing app styling.",
+    "sidebar.promptHint": "Edit this block to adjust base agent behavior without changing the app styling.",
     "sidebar.editPrompt": "Edit prompt",
     "sidebar.removePrompt": "Remove prompt",
     "sidebar.promptDialogTitle": "Instructions",
-    "sidebar.promptDialogDescription": "Define base behavior sent to model before conversation starts.",
+    "sidebar.promptDialogDescription": "Define the base behavior sent to the model before the conversation starts.",
     "sidebar.promptField": "Instructions",
     "sidebar.promptPlaceholder": "Ex.: present data in structured form and prioritize network context before host-level diagnosis.",
     "sidebar.cancel": "Cancel",
@@ -306,7 +399,7 @@ export const translations: Record<AppLocale, TranslationTable> = {
     "sidebar.testing": "Testing",
     "sidebar.saving": "Saving",
     "sidebar.saved": "Configuration saved in this browser.",
-    "sidebar.saveBrowser": "Everything stays only in this browser.",
+    "sidebar.saveBrowser": "Everything is stored in this browser only.",
     "sidebar.fillBeforeTest": "Fill every field before testing.",
     "sidebar.fillBeforeSave": "Fill every field before saving.",
     "sidebar.testSuccess": "Connection validated successfully.",
@@ -345,8 +438,8 @@ export const translations: Record<AppLocale, TranslationTable> = {
     "message.notHelpful": "Not helpful",
     "message.responseCopied": "Response copied.",
     "starters.eyebrow": "Empty state",
-    "starters.title": "Start with real flow, not empty screen.",
-    "starters.description": "Launch useful prompts to validate connection, tools, and base agent behavior in first minute.",
+    "starters.title": "Start with a real flow, not an empty screen.",
+    "starters.description": "Launch useful prompts to validate connection, tools, and base agent behavior in the first minute.",
     "starters.workspace.label": "Workspace overview",
     "starters.workspace.prompt": "Give me an overview of this MCP workspace, connected servers, and what I can already test.",
     "starters.flow.label": "Set up first flow",
@@ -354,7 +447,7 @@ export const translations: Record<AppLocale, TranslationTable> = {
     "starters.diagnostics.label": "Quick diagnostics",
     "starters.diagnostics.prompt": "What checks should I run if an MCP connects but exposes no tools?",
     "starters.example.label": "Real example",
-    "starters.example.prompt": "Simulate a real question using MCP tools and explain the step by step.",
+    "starters.example.prompt": "Simulate a real question using MCP tools and walk me through each step.",
     "audio.unavailable": "Voice transcription unavailable in this browser.",
     "audio.autoFailed": "Automatic transcription failed.",
     "audio.permissionDenied": "Microphone permission denied or unavailable.",
@@ -377,6 +470,51 @@ export const translations: Record<AppLocale, TranslationTable> = {
     "tool.previewFailed": "Could not load preview.",
     "tool.openImage": "Open image",
     "tool.imageAlt": "Preview of image returned by tool",
+    // MCP Dialog
+    "mcp.editTitle": "Edit MCP Server",
+    "mcp.addTitle": "Add MCP Server",
+    "mcp.description": "Configure the server name, transport, and MCP connection parameters.",
+    "mcp.name": "Name",
+    "mcp.transport": "Transport",
+    "mcp.command": "Executable Command",
+    "mcp.args": "Argument List",
+    "mcp.addArg": "Add argument",
+    "mcp.env": "Environment Variables",
+    "mcp.addEnv": "Add environment variable",
+    "mcp.headers": "HTTP Headers",
+    "mcp.addHeader": "Add header",
+    "mcp.validating": "Validating MCP…",
+    "mcp.sseUrlLabel": "SSE Endpoint URL",
+    "mcp.errorName": "Set a name for the MCP.",
+    "mcp.errorCommand": "Provide the MCP server command.",
+    "mcp.errorUrl": "Provide the MCP server URL.",
+    "mcp.saveFailed": "Could not validate the MCP server.",
+    "mcp.stdio.hint": "Local MCP server executed through a command.",
+    "mcp.sse.hint": "Remote endpoint through Server-Sent Events.",
+    "mcp.http.hint": "MCP server over HTTP with streaming.",
+    // LLM Dialog / Section
+    "llm.editTitle": "Edit LLM Configuration",
+    "llm.addTitle": "Add LLM",
+    "llm.description": "Choose the provider, add credentials, and test the connection before saving.",
+    "llm.provider": "Provider",
+    "llm.configured": "Configured",
+    "llm.tokensUsed": "Tokens Used",
+    // Chat Shell
+    "chat.storageReset": "Your local history was reset after a UI update. A backup was saved in the browser.",
+    "chat.argLabel": "Arguments:",
+    "chat.resultLabel": "Result:",
+    "chat.mcpValidateFailed": "Could not validate the MCP server.",
+    "chat.mcpConnectFailed": "Failed to connect to MCP.",
+    "chat.noResponseBody": "Backend did not return response content.",
+    "chat.streamFailed": "Failed to consume response stream.",
+    "chat.feedbackError": "Could not register your feedback. Try again.",
+    "chat.stoppedEmpty": "Generation stopped before producing content.",
+    "chat.requestFailed": "Failed to process the request",
+    // Error Boundary
+    "error.title": "Something went wrong",
+    "error.retry": "Try again",
+    // Topbar
+    "topbar.githubLabel": "Open repository on GitHub",
   },
 };
 
