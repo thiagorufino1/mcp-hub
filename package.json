@@ -17,7 +17,7 @@
     "access": "public"
   },
   "bin": {
-    "mcp-hub": "./bin/mcp-portal.mjs"
+    "mcp-hub": "bin/mcp-portal.mjs"
   },
   "files": [
     ".next/standalone",
