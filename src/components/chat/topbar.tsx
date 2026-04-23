@@ -75,7 +75,7 @@ export function Topbar({
               </Button>
 
               <a
-                href="https://github.com/thiagorufino1/mcp-hub-ui"
+                href="https://github.com/thiagorufino1/mcp-hub"
                 target="_blank"
                 rel="noreferrer"
                 aria-label={t("topbar.githubLabel")}
@@ -174,7 +174,7 @@ export function Topbar({
             <Tooltip>
               <TooltipTrigger asChild>
                 <a
-                  href="https://github.com/thiagorufino1/mcp-hub-ui"
+                  href="https://github.com/thiagorufino1/mcp-hub"
                   target="_blank"
                   rel="noreferrer"
                   aria-label={t("topbar.githubLabel")}

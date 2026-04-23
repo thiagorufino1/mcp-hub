@@ -1,6 +1,59 @@
-# mcp-hub
+# MCP Hub
 
-Local web UI for testing LLMs, MCP servers, tools, and chat workflows - runs entirely on your machine via `npx`.
+[![npm version](https://img.shields.io/npm/v/@thiagorufino/mcp-hub)](https://www.npmjs.com/package/@thiagorufino/mcp-hub)
+[![npm downloads](https://img.shields.io/npm/dm/@thiagorufino/mcp-hub)](https://www.npmjs.com/package/@thiagorufino/mcp-hub)
+[![license](https://img.shields.io/npm/l/@thiagorufino/mcp-hub)](./LICENSE)
+
+**MCP Hub** is a local web UI for testing LLMs and MCP servers. Connect any provider, inspect tool calls, and run multi-turn chats.
+
+---
+
+## Architecture Overview
+
+```
+┌──────────────────────────────────────────────┐
+│                  Browser UI                  │
+│        (Next.js App Router + shadcn/ui)      │
+└─────────────────────┬────────────────────────┘
+                      │
+┌─────────────────────▼────────────────────────┐
+│           Next.js Server (local)             │
+│                                              │
+│  ┌──────────────────┐  ┌──────────────────┐  │
+│  │    AI Routes     │  │    MCP Routes    │  │
+│  │  Vercel AI SDK   │  │  @mcp/sdk client │  │
+│  └────────┬─────────┘  └────────┬─────────┘  │
+└───────────┼─────────────────────┼────────────┘
+            │                     │
+┌───────────▼────────┐  ┌─────────▼────────────┐
+│   LLM Providers    │  │     MCP Servers      │
+│   (10 providers)   │  │  stdio / SSE / HTTP  │
+└────────────────────┘  └──────────────────────┘
+```
+
+MCP HUB consists of two components that work together:
+
+**MCP Hub Server**: A Next.js standalone server that runs locally via `npx`. It acts as the bridge between the browser and external services, spawning MCP stdio processes, connecting to remote MCP servers over SSE or Streamable HTTP, and forwarding LLM requests to the configured provider.
+
+**MCP Hub Client**: A React-based web UI served by the local server. It provides the interface for configuring providers, managing MCP connections, inspecting tool schemas, and running multi-turn chats with live tool call traces.
+
+All traffic stays on `localhost` except direct calls to the LLM providers you configure.
+
+---
+
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Features](#features)
+  - [LLM Providers](#llm-providers)
+  - [MCP Servers](#mcp-servers)
+  - [Chat](#chat)
+- [Stack](#stack)
+- [Security](#security)
+- [Limitations](#limitations)
+- [Links](#links)
+
+---
 
 ## Quick Start
 
@@ -10,7 +63,11 @@ npx @thiagorufino/mcp-hub
 
 Starts on `http://127.0.0.1:3000` by default and opens the browser automatically. If the port is already taken, the CLI picks the next free local port.
 
-No account. No cloud backend. Local-first runtime.
+To update to the latest version:
+
+```bash
+npx @thiagorufino/mcp-hub@latest
+```
 
 ```bash
 # Custom port
@@ -28,7 +85,7 @@ npx @thiagorufino/mcp-hub --help
 
 **Requires Node.js 20+**
 
-The public CLI refuses non-local host binding. Allowed hosts are `127.0.0.1`, `localhost`, and `::1`.
+The public CLI refuses non-local host binding. Allowed hosts: `127.0.0.1`, `localhost`, `::1`.
 
 ---
 
@@ -38,121 +95,84 @@ The public CLI refuses non-local host binding. Allowed hosts are `127.0.0.1`, `l
 
 Configure any of the 10 supported providers directly in the UI:
 
-| Provider | Models |
-|---|---|
-| Anthropic | Claude 3.5 Sonnet, Claude Opus 4... |
-| AWS Bedrock | Claude, Titan, Llama, Nova... |
-| DeepSeek | DeepSeek V3, R1... |
-| Google Gemini | Gemini 2.0 Flash, 1.5 Pro... |
-| Groq | Llama 3.3, Mixtral (ultra-fast inference) |
-| Microsoft Foundry | Azure OpenAI deployments |
-| Mistral AI | Mistral Large, Codestral... |
-| Ollama | Any local model |
-| OpenAI | GPT-4o, o1, o3-mini... |
-| xAI | Grok 2, Grok Vision... |
+| Provider | Supported |
+|---|:---:|
+| Anthropic | ✅ |
+| AWS Bedrock | ✅ |
+| DeepSeek | ✅ |
+| Google Gemini | ✅ |
+| Groq | ✅ |
+| Microsoft Foundry | ✅ |
+| Mistral AI | ✅ |
+| Ollama | ✅ |
+| OpenAI | ✅ |
+| xAI | ✅ |
 
 ### MCP Servers
 
 Connect to MCP servers over all three transports:
 
-- **stdio** - local process spawned by the app
-- **SSE** - remote server-sent events endpoint
-- **Streamable HTTP** - modern MCP transport
+| Transport | Description |
+|---|---|
+| **stdio** | Local process spawned by the app |
+| **SSE** | Remote server-sent events endpoint |
+| **Streamable HTTP** | Modern MCP transport |
 
 Inspect tools, schemas, and execute calls directly from the sidebar.
 
-- Automatic health revalidation - MCP status updates when a server goes offline or comes back
-- Per-server recovery logic - one failing MCP does not block the others from being revalidated
-- Manual retest controls - force validation whenever you want from the sidebar
+- Automatic health revalidation: MCP status updates when a server goes offline or comes back
+- Per-server recovery logic: one failing MCP does not block others from being revalidated
+- Manual retest controls: force validation whenever you want from the sidebar
 
 ### Chat
 
 - Streaming responses with live token display
 - Multi-turn conversation history
-- Custom system prompt
-- Tool activity trace - see every MCP tool call and result in real time
-- Chart rendering - ask for charts, get interactive visualizations inline
+- System Prompt support
+- Tool activity trace: see every MCP tool call and result in real time
+- Chart rendering: ask for charts, get interactive visualizations inline
 - Audio input support
-- MCP-aware chat requests - the app reuses a fresh validated MCP snapshot before exposing tools to the model
-
-### Packaging
-
-- Distributed as a public npm CLI: `@thiagorufino/mcp-hub`
-- Ships a standalone Next.js production bundle for `npx` execution
-- Includes verification scripts for package layout, CLI behavior, and smoke testing before publish
-
----
-
-## Local Development
-
-```bash
-git clone https://github.com/thiagorufino1/mcp-hub-ui
-cd mcp-hub-ui
-npm install
-npm run dev
-```
-
-### Scripts
-
-| Command | Description |
-|---|---|
-| `npm run dev` | Start dev server at `http://localhost:3000` |
-| `npm run build` | Production build |
-| `npm run build:package` | Build + bundle for npx distribution |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | TypeScript type check (no emit) |
-| `npm run test` | Unit and manifest checks |
-| `npm run test:smoke` | Start the packaged CLI and verify HTTP boot |
-| `npm run prepare:publish-dir` | Build the publish-ready directory |
-| `npm run pack:check` | Validate the tarball produced for publish |
-| `npm run publish:package-dir` | Alias for preparing the publish-ready directory |
-
-### Publish Checklist
-
-```bash
-npm run typecheck
-npm run test
-npm run build:package
-npm run pack:check
-```
-
-If all four pass, the package is ready to commit and publish.
+- MCP-aware chat requests: fresh validated MCP snapshot before exposing tools to the model
 
 ---
 
 ## Stack
 
-- **Next.js 16** (App Router, standalone output)
-- **Vercel AI SDK 6** - unified streaming across all providers
-- **@modelcontextprotocol/sdk** - MCP client
-- **Tailwind CSS 4** + **Radix UI** + **shadcn/ui**
-- **@lobehub/icons** - official AI provider brand icons
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router, standalone output) |
+| AI | Vercel AI SDK 6, unified streaming across all providers |
+| MCP | @modelcontextprotocol/sdk |
+| UI | Tailwind CSS 4 + Radix UI + shadcn/ui |
+| Icons | @lobehub/icons, official AI provider brand icons |
 
 ---
 
 ## Security
 
-Runs locally on loopback interfaces only. Credentials are sent only to providers you configure and are not stored in any remote backend owned by this project.
+Runs locally on loopback interfaces only. Credentials are sent only to providers you configure and never stored in any remote backend.
 
-- Sensitive LLM credentials and MCP auth headers/env are stored only in browser `sessionStorage`
-- Existing legacy local credentials are migrated into `sessionStorage` and removed from `localStorage`
-- Closing the browser tab/session clears sensitive config unless you re-enter it
-- Chat history and non-sensitive UI preferences may still persist locally for DX
+- LLM credentials and MCP auth headers/env stored only in browser `sessionStorage`
+- Closing the tab clears all sensitive config
+- Chat history and non-sensitive UI preferences may persist locally
 - MCP `stdio` servers are spawned as child processes, so only connect to servers you trust
-- The public CLI intentionally refuses non-local host binding to avoid exposing local process execution primitives over the network
-- See [SECURITY.md](./SECURITY.md) for the security model
+- CLI refuses non-local host binding by design
+
+See [SECURITY.md](./SECURITY.md) for the full security model.
+
+---
 
 ## Limitations
 
-- This package is a CLI app distributed through npm, not a library API
-- First launch may be heavier because the standalone Next.js app is shipped in the tarball
-- Provider credentials are session-scoped by design, so you must re-enter them in a new browser session
-- Remote multi-user deployment is out of scope for the public package
+- CLI app distributed via npm, not a library API
+- First launch downloads the standalone Next.js bundle, which may take a moment
+- Provider credentials are session-scoped, so you must re-enter them in new browser sessions
+- Remote multi-user deployment is out of scope
 
 ---
 
 ## Links
 
-- GitHub: https://github.com/thiagorufino1/mcp-hub-ui
-- Issues: https://github.com/thiagorufino1/mcp-hub-ui/issues
+- GitHub: https://github.com/thiagorufino1/mcp-hub
+- Issues: https://github.com/thiagorufino1/mcp-hub/issues
 - npm: https://www.npmjs.com/package/@thiagorufino/mcp-hub

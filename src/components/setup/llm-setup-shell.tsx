@@ -139,7 +139,7 @@ export function LlmSetupShell() {
                 </p>
                 <p className="mt-2 text-sm font-semibold text-[var(--color-text-primary)]">Escolha provider</p>
                 <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
-                  OpenAI, Azure, Gemini, Bedrock ou Ollama.
+                  OpenAI, Foundry, Gemini, Bedrock ou Ollama.
                 </p>
               </div>
               <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-4">

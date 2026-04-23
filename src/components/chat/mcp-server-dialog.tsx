@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import type { McpApprovalMode, McpServerConfig, McpTransport } from "@/types/mcp";
+import type { McpServerConfig, McpTransport } from "@/types/mcp";
 
 type Props = {
   initialServer?: McpServerConfig | null;
@@ -30,7 +30,7 @@ type KVItem = { id: string; key: string; value: string };
 
 function createDraft(server?: McpServerConfig | null) {
   return {
-    approvalMode: server?.approvalMode ?? ("always" satisfies McpApprovalMode),
+
     args: (server?.args ?? []).map((v) => ({ id: crypto.randomUUID(), value: v })),
     approvedToolNames: server?.approvedToolNames ?? [],
     command: server?.command ?? "",
@@ -48,8 +48,6 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
   const [draft] = useState(() => createDraft(initialServer));
   const [name, setName] = useState(draft.name);
   const [transport, setTransport] = useState<McpTransport>(draft.transport);
-  const [approvalMode, setApprovalMode] = useState<McpApprovalMode>(draft.approvalMode);
-  const [approvedToolNames, setApprovedToolNames] = useState<string[]>(draft.approvedToolNames);
   const [command, setCommand] = useState(draft.command);
   const [args, setArgs] = useState<ArgItem[]>(draft.args);
   const [url, setUrl] = useState(draft.url);
@@ -63,18 +61,6 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
     { value: "sse", label: "SSE", hint: t("mcp.sse.hint") },
     { value: "streamable-http", label: "HTTP", hint: t("mcp.http.hint") },
   ];
-  const approvalOptions: Array<{ value: McpApprovalMode; label: string; hint: string; disabled?: boolean }> = [
-    { value: "always", label: "All tools", hint: "Allow this server to expose all discovered tools to chat." },
-    {
-      value: "selected",
-      label: "Selected tools",
-      hint: "Expose only checked tools after first successful inspection.",
-      disabled: !initialServer?.tools.length,
-    },
-    { value: "never", label: "Inspect only", hint: "Keep tool execution disabled for this server." },
-  ];
-  const availableTools = initialServer?.tools ?? [];
-
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -128,18 +114,11 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
       return acc;
     }, {} as Record<string, string>);
 
-    const normalizedApprovedToolNames =
-      approvalMode === "selected"
-        ? approvedToolNames.filter((toolName) =>
-            availableTools.some((tool) => tool.name === toolName),
-          )
-        : [];
-
     try {
       await onSave({
         args: safeArgs,
-        approvalMode,
-        approvedToolNames: normalizedApprovedToolNames,
+        approvalMode: "always",
+        approvedToolNames: [],
         command: transport === "stdio" ? trimmedCommand : undefined,
         connectionStatus: initialServer?.connectionStatus ?? "pending",
         enabled: initialServer?.enabled ?? true,
@@ -219,76 +198,6 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
                 );
               })}
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tool approval</Label>
-            <div className="grid gap-2">
-              {approvalOptions.map((option) => {
-                const isSelected = approvalMode === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    disabled={option.disabled}
-                    onClick={() => setApprovalMode(option.value)}
-                    className={cn(
-                      "rounded-2xl border px-4 py-3 text-left transition-all duration-150",
-                      option.disabled
-                        ? "cursor-not-allowed border-[#e5e7eb] bg-[#f8fafc] text-muted-foreground/60"
-                        : isSelected
-                          ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
-                          : "border-[#dbe4f1] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/50",
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-semibold text-foreground">{option.label}</span>
-                      {isSelected ? <CheckCircle2 className="size-4 text-[var(--color-primary)]" /> : null}
-                    </div>
-                    <p className="mt-1 text-[12px] leading-5 text-[var(--color-text-secondary)]">{option.hint}</p>
-                  </button>
-                );
-              })}
-            </div>
-            {approvalMode === "selected" ? (
-              <div className="rounded-2xl border border-[#dbe4f1] bg-[var(--color-surface)] p-3">
-                {availableTools.length > 0 ? (
-                  <div className="space-y-2">
-                    {availableTools.map((tool) => {
-                      const checked = approvedToolNames.includes(tool.name);
-                      return (
-                        <label key={tool.name} className="flex cursor-pointer items-start gap-3 rounded-xl border border-transparent px-2 py-2 hover:border-[#dbe4f1]">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={(event) => {
-                              setApprovedToolNames((current) =>
-                                event.target.checked
-                                  ? [...new Set([...current, tool.name])]
-                                  : current.filter((name) => name !== tool.name),
-                              );
-                            }}
-                            className="mt-0.5"
-                          />
-                          <div className="min-w-0">
-                            <p className="text-[13px] font-medium text-foreground">{tool.name}</p>
-                            {tool.description ? (
-                              <p className="mt-0.5 text-[12px] leading-5 text-[var(--color-text-secondary)]">
-                                {tool.description}
-                              </p>
-                            ) : null}
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-[12px] leading-5 text-[var(--color-text-secondary)]">
-                    Save and validate server first. Then reopen dialog to choose specific tools.
-                  </p>
-                )}
-              </div>
-            ) : null}
           </div>
 
           {transport === "stdio" ? (

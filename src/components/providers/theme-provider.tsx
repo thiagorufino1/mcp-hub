@@ -46,7 +46,7 @@ function applyTheme(theme: ThemeMode) {
 }
 
 export function ThemeProvider({ children }: PropsWithChildren) {
-  const [theme, setThemeState] = useState<ThemeMode>("system");
+  const [theme, setThemeState] = useState<ThemeMode>("light");
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light");
   const [hasLoadedTheme, setHasLoadedTheme] = useState(false);
 
