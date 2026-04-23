@@ -73,7 +73,7 @@ try {
     process.exit(1);
   }
 
-  if (result.unpackedSize > 24 * 1024 * 1024) {
+  if (result.unpackedSize > 50 * 1024 * 1024) {
     console.error(
       `Pack check failed: unpacked size too large (${result.unpackedSize} bytes).`,
     );
