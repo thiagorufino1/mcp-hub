@@ -1,6 +1,6 @@
 "use client";
 
-import { Anthropic, Aws, Azure, DeepSeek, Gemini, Groq, Mistral, Ollama, OpenAI, XAI } from "@lobehub/icons";
+import { Anthropic, Aws, AzureAI, DeepSeek, Gemini, Groq, Mistral, Ollama, OpenAI, XAI } from "@lobehub/icons";
 import { cn } from "@/lib/utils";
 import type { LLMConfig } from "@/types/llm-config";
 
@@ -24,7 +24,7 @@ export function ProviderLogo({ provider, className, iconClassName, flat = false 
 
   const iconMap: Record<ProviderType, React.ReactNode> = {
     openai: <OpenAI size={sizePx} />,
-    azure: <Azure.Color size={sizePx} />,
+    azure: <AzureAI.Color size={sizePx} />,
     google: <Gemini.Color size={sizePx} />,
     bedrock: <Aws.Color size={sizePx} />,
     ollama: <Ollama size={sizePx} />,
