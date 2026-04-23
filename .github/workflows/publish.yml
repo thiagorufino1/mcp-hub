@@ -18,7 +18,6 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          registry-url: https://registry.npmjs.org
 
       - run: npm ci --legacy-peer-deps
 
@@ -44,5 +43,3 @@ jobs:
           fi
 
       - run: npm publish --access public --provenance ./.npm-package
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
