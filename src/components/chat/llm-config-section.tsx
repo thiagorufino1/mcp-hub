@@ -5,12 +5,12 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useAppPreferences } from "@/components/providers/app-preferences-provider";
 import { LlmConfigDialog } from "./llm-config-dialog";
-import { ProviderForm, buildLLMConfig } from "@/components/setup/provider-form";
 import { ProviderLogo } from "@/components/setup/provider-logo";
-import { PROVIDERS, getProviderMeta } from "@/components/setup/provider-selector";
+import { getProviderMeta } from "@/components/setup/provider-selector";
 import { Button } from "@/components/ui/button";
-import { cn, formatTokenCount } from "@/lib/utils";
-import { LLM_CONFIG_STORAGE_KEY, LLM_CONFIGURED_COOKIE } from "@/types/llm-config";
+import { removeSessionValue, SESSION_LLM_CONFIG_KEY, writeSessionJson } from "@/lib/client-storage";
+import { formatTokenCount } from "@/lib/utils";
+import { LLM_CONFIGURED_COOKIE } from "@/types/llm-config";
 import type { LLMConfig } from "@/types/llm-config";
 import type { TokenUsage } from "@/types/chat";
 
@@ -23,7 +23,7 @@ type Props = {
   usageState: "idle" | "available" | "unavailable";
 };
 
-const HEADER_GRADIENT = "linear-gradient(135deg, hsl(207, 100%, 35%), hsl(213, 100%, 19%))";
+const HEADER_GRADIENT = "var(--gradient-action)";
 
 export function LlmConfigSection({ value, onChange, usageTotals, usageState }: Props) {
   const { t } = useAppPreferences();
@@ -31,7 +31,7 @@ export function LlmConfigSection({ value, onChange, usageTotals, usageState }: P
   const [isSaving, setIsSaving] = useState(false);
 
   function handleDelete() {
-    localStorage.removeItem(LLM_CONFIG_STORAGE_KEY);
+    removeSessionValue(SESSION_LLM_CONFIG_KEY);
     document.cookie = `${LLM_CONFIGURED_COOKIE}=; path=/; max-age=0`;
     onChange(null);
   }
@@ -39,7 +39,7 @@ export function LlmConfigSection({ value, onChange, usageTotals, usageState }: P
   async function handleSave(config: LLMConfig) {
     setIsSaving(true);
     try {
-      localStorage.setItem(LLM_CONFIG_STORAGE_KEY, JSON.stringify(config));
+      writeSessionJson(SESSION_LLM_CONFIG_KEY, config);
       document.cookie = `${LLM_CONFIGURED_COOKIE}=1; path=/; max-age=31536000`;
       onChange(config);
     } finally {
@@ -115,9 +115,9 @@ export function LlmConfigSection({ value, onChange, usageTotals, usageState }: P
           <div className="px-4 py-3.5">
             <div className="flex items-center gap-2">
               {providerMeta ? (
-                <ProviderLogo provider={providerMeta.id} className="size-8 shrink-0 rounded-xl" iconClassName="size-4" />
+                <ProviderLogo provider={providerMeta.id} flat className="size-8 shrink-0 rounded-xl" iconClassName="size-4" />
               ) : (
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-border bg-white text-[10px] font-bold text-foreground shadow-sm">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-border bg-[var(--color-surface)] text-[10px] font-bold text-foreground shadow-sm">
                   LLM
                 </div>
               )}
@@ -148,7 +148,7 @@ export function LlmConfigSection({ value, onChange, usageTotals, usageState }: P
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-6 rounded-full text-[var(--color-error)] hover:text-[var(--color-error)]"
+                  className="size-6 rounded-full text-[var(--color-error)] hover:bg-[var(--color-error-soft)] hover:text-[var(--color-error)]"
                   onClick={handleDelete}
                 >
                   <Trash2 className="size-3" />

@@ -27,6 +27,7 @@
   --color-surface-muted: #f5f8fc;
   --color-text-primary: #152133;
   --color-text-secondary: #607082;
+  --gradient-action: linear-gradient(135deg, hsl(207, 100%, 35%), hsl(213, 100%, 19%));
   --color-border: #d7e1eb;
   --color-primary: #0f4b9b;
   --color-primary-hover: #0d4084;
@@ -41,32 +42,33 @@
 }
 
 .dark {
-  --background: 219 60% 8%;
-  --foreground: 204 30% 95%;
-  --card: 219 50% 11%;
-  --card-foreground: 204 30% 95%;
-  --popover: 219 50% 11%;
-  --popover-foreground: 204 30% 95%;
+  --background: 210 4% 10%;
+  --foreground: 210 14% 93%;
+  --card: 210 5% 13%;
+  --card-foreground: 210 14% 93%;
+  --popover: 210 5% 13%;
+  --popover-foreground: 210 14% 93%;
   --primary: 199 100% 55%;
-  --primary-foreground: 219 60% 8%;
-  --secondary: 215 28% 17%;
-  --secondary-foreground: 204 30% 95%;
-  --muted: 215 28% 14%;
-  --muted-foreground: 210 18% 66%;
-  --accent: 215 40% 20%;
-  --accent-foreground: 204 30% 95%;
+  --primary-foreground: 210 4% 10%;
+  --secondary: 210 5% 17%;
+  --secondary-foreground: 210 14% 93%;
+  --muted: 210 5% 15%;
+  --muted-foreground: 210 8% 56%;
+  --accent: 210 6% 22%;
+  --accent-foreground: 210 14% 93%;
   --destructive: 0 72% 58%;
   --destructive-foreground: 0 0% 100%;
-  --border: 215 22% 22%;
-  --input: 215 22% 22%;
+  --border: 210 6% 20%;
+  --input: 210 6% 20%;
   --ring: 199 100% 55%;
 
-  --color-bg: #081625;
-  --color-surface: #0c2033;
-  --color-surface-muted: #11263a;
-  --color-text-primary: #e8f4fa;
-  --color-text-secondary: #7da8c0;
-  --color-border: #123450;
+  --color-bg: #191a1b;
+  --color-surface: #1f2123;
+  --color-surface-muted: #252729;
+  --color-text-primary: #e6edf3;
+  --color-text-secondary: #8b949e;
+  --gradient-action: linear-gradient(135deg, hsl(207, 70%, 28%), hsl(213, 70%, 17%));
+  --color-border: #30363d;
   --color-primary: #33b8e8;
   --color-primary-hover: #5cc8ed;
   --color-primary-soft: rgba(51, 184, 232, 0.14);
@@ -95,7 +97,7 @@ html {
 .dark html,
 html.dark {
   color-scheme: dark;
-  background: #051828;
+  background: #191a1b;
 }
 
 body {
@@ -286,7 +288,11 @@ textarea {
 .surface-panel {
   background: color-mix(in srgb, var(--color-surface) 98%, transparent);
   border: 1px solid var(--color-border);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.66) inset;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+}
+
+.dark .surface-panel {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
 }
 
 .surface-subtle {
@@ -296,7 +302,11 @@ textarea {
 .workspace-panel {
   border: 1px solid var(--color-border);
   background: color-mix(in srgb, var(--color-surface) 98%, transparent);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.66) inset;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+}
+
+.dark .workspace-panel {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
 }
 
 .metric-chip {

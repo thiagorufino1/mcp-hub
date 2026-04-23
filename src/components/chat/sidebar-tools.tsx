@@ -39,7 +39,9 @@ type SidebarToolsContentProps = {
   onEditServer: (serverId: string) => void;
   onRemoveServer: (serverId: string) => void;
   onRetestServer: (serverId: string) => void;
+  onToggleServerEnabled: (serverId: string) => void;
   retestingServerIds: string[];
+  togglingServerIds: string[];
   llmConfig: LLMConfig | null;
   onChangeLlmConfig: (config: LLMConfig | null) => void;
   usageTotals: TokenUsage;
@@ -58,13 +60,31 @@ function getTransportMeta(server: McpServerConfig) {
 }
 
 function ConnectionBadge({
+  enabled,
   status,
   isRetesting,
 }: {
+  enabled: boolean;
   status: McpServerConfig["connectionStatus"];
   isRetesting: boolean;
 }) {
   const { t } = useAppPreferences();
+
+  if (!enabled) {
+    return (
+      <span
+        className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium"
+        style={{
+          borderColor: "hsl(var(--border))",
+          background: "hsl(var(--muted))",
+          color: "hsl(var(--muted-foreground))",
+        }}
+      >
+        <XCircle className="size-3" />
+        {t("sidebar.disabled")}
+      </span>
+    );
+  }
 
   if (isRetesting) {
     const label = status === "error" ? t("sidebar.reconnecting") : t("sidebar.validating");
@@ -124,19 +144,23 @@ function ConnectionBadge({
   );
 }
 
-const HEADER_GRADIENT = "linear-gradient(135deg, hsl(207, 100%, 35%), hsl(213, 100%, 19%))";
+const HEADER_GRADIENT = "var(--gradient-action)";
 
 function ServerCard({
   isRetesting,
+  isToggling,
   onEditServer,
   onRemoveServer,
   onRetestServer,
+  onToggleServerEnabled,
   server,
 }: {
   isRetesting: boolean;
+  isToggling: boolean;
   onEditServer: (serverId: string) => void;
   onRemoveServer: (serverId: string) => void;
   onRetestServer: (serverId: string) => void;
+  onToggleServerEnabled: (serverId: string) => void;
   server: McpServerConfig;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -162,11 +186,24 @@ function ServerCard({
               variant="ghost"
               size="icon"
               className="size-6 rounded-full text-muted-foreground/40 hover:text-foreground"
-              disabled={isRetesting}
+              disabled={isRetesting || isToggling || !server.enabled}
               onClick={() => onRetestServer(server.id)}
               aria-label={retestLabel}
             >
               {isRetesting ? <LoaderCircle className="size-3 animate-spin" /> : <RefreshCw className="size-3" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "size-6 rounded-full hover:text-foreground",
+                server.enabled ? "text-[var(--color-success)]/70 hover:bg-[var(--color-success-soft)]" : "text-muted-foreground/40 hover:bg-muted/60",
+              )}
+              disabled={isRetesting || isToggling}
+              onClick={() => onToggleServerEnabled(server.id)}
+              aria-label={server.enabled ? t("sidebar.disableServer") : t("sidebar.enableServer")}
+            >
+              {isToggling ? <LoaderCircle className="size-3 animate-spin" /> : server.enabled ? <CheckCircle2 className="size-3" /> : <XCircle className="size-3" />}
             </Button>
             <Button
               variant="ghost"
@@ -180,7 +217,7 @@ function ServerCard({
             <Button
               variant="ghost"
               size="icon"
-              className="size-6 rounded-full text-[var(--color-error)] hover:text-[var(--color-error)]"
+              className="size-6 rounded-full text-[var(--color-error)] hover:bg-[var(--color-error-soft)] hover:text-[var(--color-error)]"
               onClick={() => onRemoveServer(server.id)}
               aria-label={`Remove ${server.name}`}
             >
@@ -194,7 +231,7 @@ function ServerCard({
         </p>
 
         <div className="mt-2.5 flex items-center gap-2">
-          <ConnectionBadge status={server.connectionStatus} isRetesting={isRetesting} />
+          <ConnectionBadge enabled={server.enabled} status={server.connectionStatus} isRetesting={isRetesting} />
           <span className="shrink-0 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/70">
             {meta.label}
           </span>
@@ -279,7 +316,9 @@ export function SidebarToolsContent({
   onEditServer,
   onRemoveServer,
   onRetestServer,
+  onToggleServerEnabled,
   retestingServerIds,
+  togglingServerIds,
   llmConfig,
   onChangeLlmConfig,
   usageTotals,
@@ -291,7 +330,7 @@ export function SidebarToolsContent({
   return (
     <TooltipProvider delayDuration={300}>
       <div className="flex flex-col gap-3">
-        <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.06]" style={{ boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
+        <div className="overflow-hidden rounded-2xl bg-[var(--color-surface)] ring-1 ring-black/[0.06] dark:ring-white/[0.06]" style={{ boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
           <div className="px-4 py-4">
             <SystemPromptSection
               prompts={systemPrompts}
@@ -304,7 +343,7 @@ export function SidebarToolsContent({
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.06]" style={{ boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
+        <div className="overflow-hidden rounded-2xl bg-[var(--color-surface)] ring-1 ring-black/[0.06] dark:ring-white/[0.06]" style={{ boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
           <div className="px-4 py-4">
             <LlmConfigSection
               value={llmConfig}
@@ -315,7 +354,7 @@ export function SidebarToolsContent({
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.06]" style={{ boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
+        <div className="overflow-hidden rounded-2xl bg-[var(--color-surface)] ring-1 ring-black/[0.06] dark:ring-white/[0.06]" style={{ boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
           <div className="px-4 py-4">
             <div className="flex items-center gap-3">
               <div className="flex size-8 shrink-0 items-center justify-center rounded-full" style={{ background: HEADER_GRADIENT }}>
@@ -350,9 +389,11 @@ export function SidebarToolsContent({
                   <ServerCard
                     key={server.id}
                     isRetesting={retestingServerIds.includes(server.id)}
+                    isToggling={togglingServerIds.includes(server.id)}
                     onEditServer={onEditServer}
                     onRemoveServer={onRemoveServer}
                     onRetestServer={onRetestServer}
+                    onToggleServerEnabled={onToggleServerEnabled}
                     server={server}
                   />
                 ))}

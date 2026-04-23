@@ -48,7 +48,7 @@ export function MessageComposer({ isSubmitting, onStop, onSubmit }: Props) {
   return (
     <div className="mx-auto w-full max-w-[980px]">
       <form
-        className="flex w-full items-center gap-3 rounded-[26px] border border-[#dbe4f1] bg-white px-4 py-2 shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
+        className="flex w-full items-center gap-3 rounded-[26px] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
         onSubmit={(event) => void handleSubmit(event)}
       >
         <AudioRecorder
@@ -112,7 +112,7 @@ export function MessageComposer({ isSubmitting, onStop, onSubmit }: Props) {
             type="submit"
             size="icon"
             className="size-10 shrink-0 rounded-full border border-[var(--color-primary)]/12 text-white shadow-none hover:opacity-90 disabled:opacity-40"
-            style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-primary-strong))" }}
+            style={{ background: "var(--gradient-action)" }}
             disabled={!value.trim()}
             aria-label={t("composer.send")}
           >

@@ -23,7 +23,9 @@ type Props = {
   onEditServer: (serverId: string) => void;
   onRemoveServer: (serverId: string) => void;
   onRetestServer: (serverId: string) => void;
+  onToggleServerEnabled: (serverId: string) => void;
   retestingServerIds: string[];
+  togglingServerIds: string[];
   servers: McpServerConfig[];
   llmConfig: LLMConfig | null;
   onChangeLlmConfig: (config: LLMConfig | null) => void;
@@ -44,7 +46,9 @@ export function SidebarDrawer({
   onEditServer,
   onRemoveServer,
   onRetestServer,
+  onToggleServerEnabled,
   retestingServerIds,
+  togglingServerIds,
   servers,
   llmConfig,
   onChangeLlmConfig,
@@ -98,7 +102,7 @@ export function SidebarDrawer({
           <div className="mb-3 flex justify-end">
             <button
               aria-label={t("sidebar.closeMenu")}
-              className="rounded-full p-1.5 text-muted-foreground transition hover:bg-white/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="rounded-full p-1.5 text-muted-foreground transition hover:bg-[var(--color-surface-muted)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onClick={onClose}
               ref={closeButtonRef}
               type="button"
@@ -117,7 +121,9 @@ export function SidebarDrawer({
             onEditServer={onEditServer}
             onRemoveServer={onRemoveServer}
             onRetestServer={onRetestServer}
+            onToggleServerEnabled={onToggleServerEnabled}
             retestingServerIds={retestingServerIds}
+            togglingServerIds={togglingServerIds}
             servers={servers}
             llmConfig={llmConfig}
             onChangeLlmConfig={onChangeLlmConfig}

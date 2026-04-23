@@ -4,7 +4,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { LLM_CONFIG_STORAGE_KEY, LLM_CONFIGURED_COOKIE } from "@/types/llm-config";
+import {
+  migrateLocalJsonToSession,
+  SESSION_LLM_CONFIG_KEY,
+  writeSessionJson,
+} from "@/lib/client-storage";
+import { LEGACY_LLM_CONFIG_STORAGE_KEY, LLM_CONFIGURED_COOKIE } from "@/types/llm-config";
 import type { LLMConfig } from "@/types/llm-config";
 import { buildLLMConfig, ProviderForm } from "./provider-form";
 import { PROVIDERS, ProviderSelector } from "./provider-selector";
@@ -20,10 +25,15 @@ export function LlmSetupShell() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    const config = migrateLocalJsonToSession<LLMConfig>(
+      LEGACY_LLM_CONFIG_STORAGE_KEY,
+      SESSION_LLM_CONFIG_KEY,
+    );
+    if (!config) {
+      return;
+    }
+
     try {
-      const stored = localStorage.getItem(LLM_CONFIG_STORAGE_KEY);
-      if (!stored) return;
-      const config = JSON.parse(stored) as LLMConfig;
       setSelectedProvider(config.provider);
       setFieldValues(config as unknown as Record<string, string>);
     } catch {
@@ -83,7 +93,7 @@ export function LlmSetupShell() {
     setIsSaving(true);
 
     try {
-      localStorage.setItem(LLM_CONFIG_STORAGE_KEY, JSON.stringify(llmConfig));
+      writeSessionJson(SESSION_LLM_CONFIG_KEY, llmConfig);
       document.cookie = `${LLM_CONFIGURED_COOKIE}=1; path=/; max-age=31536000`;
       router.push("/chat");
     } catch {
@@ -104,7 +114,7 @@ export function LlmSetupShell() {
         className="relative z-10 flex h-16 items-center border-b border-white/55 px-5 backdrop-blur sm:px-8"
         style={{ background: "linear-gradient(135deg, hsl(207, 100%, 35%), hsl(213, 100%, 19%))" }}
       >
-        <p className="text-[18px] font-semibold tracking-[-0.03em] text-white">mcp-hub-ui</p>
+        <p className="text-[18px] font-semibold tracking-[-0.03em] text-white">mcp-hub</p>
       </header>
 
       <main className="relative z-10 mx-auto flex w-full max-w-[1220px] flex-col gap-8 px-4 py-8 sm:px-6 lg:grid lg:min-h-[calc(100vh-64px)] lg:grid-cols-[minmax(0,1.05fr)_minmax(440px,520px)] lg:items-center lg:px-8">
@@ -118,7 +128,7 @@ export function LlmSetupShell() {
                 Configure motor do portal sem sair do fluxo.
               </h1>
               <p className="max-w-[48ch] text-[15px] leading-7 text-[var(--color-text-secondary)]">
-                Escolha provedor, valide credenciais e entre no chat com contexto persistido apenas no navegador local.
+                Escolha provedor, valide credenciais e entre no chat com contexto persistido apenas durante esta sessao do navegador.
               </p>
             </div>
 
@@ -159,7 +169,7 @@ export function LlmSetupShell() {
                     Security note
                   </p>
                   <p className="mt-2 text-sm leading-6 text-slate-300">
-                    Credenciais nao vao para banco. Estado fica no navegador e segue para teste via API local.
+                    Credenciais nao vao para banco. Estado sensivel fica so na sessao atual do navegador e segue para teste via API local.
                   </p>
                 </div>
                 <div className="rounded-full border px-3 py-1 text-xs font-semibold" style={{ borderColor: "var(--color-success)", background: "var(--color-success-soft)", color: "var(--color-success)" }}>
@@ -176,7 +186,7 @@ export function LlmSetupShell() {
               Configurar provedor LLM
             </h2>
             <p className="mt-2 text-[14px] leading-6 text-[var(--color-text-secondary)]">
-              Escolha provedor e preencha credenciais. Tudo fica salvo apenas neste navegador.
+              Escolha provedor e preencha credenciais. Configuracao sensivel fica apenas nesta sessao do navegador.
             </p>
           </div>
 

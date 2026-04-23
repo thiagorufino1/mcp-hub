@@ -9,10 +9,11 @@ const ServerPayloadSchema = z.object({
   args: z.array(z.string()).optional().default([]),
   command: z.string().trim().optional(),
   description: z.string().trim().optional(),
+  enabled: z.boolean().optional().default(true),
   env: z.record(z.string(), z.string()).optional().default({}),
   headers: z.record(z.string(), z.string()).optional().default({}),
   id: z.string().min(1),
-  name: z.string().trim().min(1, "Defina um nome para o MCP."),
+  name: z.string().trim().min(1, "MCP server name is required."),
   transport: z.enum(["stdio", "sse", "streamable-http"]),
   url: z.string().trim().optional(),
 }).refine(data => {
@@ -20,20 +21,31 @@ const ServerPayloadSchema = z.object({
     return false;
   }
   return true;
-}, { message: "Informe o comando do servidor MCP.", path: ["command"] })
+}, { message: "stdio transport requires a command.", path: ["command"] })
 .refine(data => {
   if (data.transport !== "stdio" && (!data.url || data.url.length === 0)) {
     return false;
   }
   return true;
-}, { message: "Informe a URL do servidor MCP.", path: ["url"] });
+}, { message: "Remote transport requires a URL.", path: ["url"] });
+
+const SLOW_INSPECT_LOG_THRESHOLD_MS = 500;
+
+function describeInspectTarget(server: McpServerConfig) {
+  if (server.transport === "stdio") {
+    const commandPreview = [server.command, ...(server.args ?? [])].filter(Boolean).join(" ").trim();
+    return commandPreview || "(no command)";
+  }
+
+  return server.url ?? "(no url)";
+}
 
 export async function POST(request: Request) {
   let body: { server?: Partial<McpServerConfig> };
   try {
     body = (await request.json()) as { server?: Partial<McpServerConfig> };
   } catch {
-    return Response.json({ error: "Corpo da requisicao invalido." }, { status: 400 });
+    return Response.json({ error: "Invalid request body." }, { status: 400 });
   }
 
   const parsed = ServerPayloadSchema.safeParse(body.server ?? {});
@@ -48,7 +60,22 @@ export async function POST(request: Request) {
     tools: [],
   } as McpServerConfig);
 
+  const startedAt = performance.now();
   const result = await inspectMcpServer(serverConfig);
+  const durationMs = Math.round(performance.now() - startedAt);
+  const target = describeInspectTarget(serverConfig);
+
+  if (result.server.connectionStatus === "connected") {
+    if (durationMs >= SLOW_INSPECT_LOG_THRESHOLD_MS) {
+      console.info(
+        `[mcp inspect] slow server="${serverConfig.name}" transport=${serverConfig.transport} target="${target}" durationMs=${durationMs} tools=${result.server.tools.length}`,
+      );
+    }
+  } else {
+    console.warn(
+      `[mcp inspect] failed server="${serverConfig.name}" transport=${serverConfig.transport} target="${target}" durationMs=${durationMs} error="${result.server.errorMessage ?? "unknown"}"`,
+    );
+  }
 
   return Response.json(result satisfies McpInspectResponse, {
     status: result.server.connectionStatus === "connected" ? 200 : 422,

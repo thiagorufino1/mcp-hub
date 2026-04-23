@@ -19,6 +19,7 @@ export type McpDiscoveredTool = {
 export type McpServerConfig = {
   id: string;
   name: string;
+  enabled: boolean;
   description?: string;
   transport: McpTransport;
   command?: string;

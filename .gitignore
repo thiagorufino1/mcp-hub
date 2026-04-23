@@ -1,46 +1,59 @@
-node_modules
-.next
+node_modules/
+
+# Next.js build output
 .next/
-.turbo
-.vercel
-out
-dist
-.npm-packages
-.npmrc
-.idea
-.vscode
+.next-package/
+out/
+
+# Package build/publish artifacts
+.npm-package/
+*.tgz
+
+# Tooling caches
+.turbo/
+.vercel/
+.cache/
+.eslintcache
+npm-cache/
+.npm/
+coverage/
+dist/
+*.tsbuildinfo
+
+# IDEs and local agent tooling
+.idea/
+.vscode/
+.claude/
+.playwright-mcp/
+.playwright-cli/
+
+# Local environment files
 .env
 .env.*
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.*.local
+.envrc
+
+# Test and browser artifacts
+playwright-report/
+test-results/
+lighthouse-*.json
+playwright-*.png
+*.trace
+
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-coverage
-.cache
-.eslintcache
-playwright-report
-test-results
-.claude/
-.playwright-mcp/
-.playwright-cli/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Local scratch files
 CLAUDE.md
 current-ui.png
 jira.md
 docs/superpowers/
 tmp/
 temp/
-*.tsbuildinfo
-lighthouse-*.json
-playwright-*.png
-*.trace
-*.log
-npm-cache
-.npm
-.envrc
-.DS_Store
-Thumbs.db

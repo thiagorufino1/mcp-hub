@@ -1,29 +1,77 @@
 #!/usr/bin/env node
-// bin/mcp-portal.mjs
+import { spawn } from "child_process";
+import { existsSync } from "fs";
 import { createServer } from "net";
 import { dirname, join } from "path";
-import { spawn } from "child_process";
-import { fileURLToPath } from "url";
 import open from "open";
+import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const serverPath = join(__dirname, "..", ".next", "standalone", "server.js");
-
+const localHosts = new Set(["127.0.0.1", "localhost", "::1"]);
 const args = process.argv.slice(2);
+const shouldOpenBrowser = !args.includes("--no-open");
+
+if (args.includes("--help") || args.includes("-h")) {
+  console.log(`
+  mcp-hub - local web UI for MCP servers and LLM chat
+
+  Usage:
+    npx @thiagorufino/mcp-hub [options]
+
+  Options:
+    --port <number>   Port to listen on (default: 3000, auto-increments if taken)
+    --host <address>  Local host to bind to (default: 127.0.0.1)
+    --no-open         Start server without opening the browser
+    -h, --help        Show this help message
+
+  Examples:
+    npx @thiagorufino/mcp-hub
+    npx @thiagorufino/mcp-hub --port 4000
+    npx @thiagorufino/mcp-hub --host localhost --port 3000
+    npx @thiagorufino/mcp-hub --no-open
+`);
+  process.exit(0);
+}
+
 const portFlagIndex = args.indexOf("--port");
 const requestedPort =
   portFlagIndex !== -1 && args[portFlagIndex + 1]
     ? parseInt(args[portFlagIndex + 1], 10)
     : 3000;
 
-async function findFreePort(startPort) {
+const hostFlagIndex = args.indexOf("--host");
+const requestedHost =
+  hostFlagIndex !== -1 && args[hostFlagIndex + 1]
+    ? args[hostFlagIndex + 1]
+    : "127.0.0.1";
+
+if (!Number.isInteger(requestedPort) || requestedPort < 1 || requestedPort > 65535) {
+  console.error("Invalid --port value. Use integer between 1 and 65535.");
+  process.exit(1);
+}
+
+if (!localHosts.has(requestedHost)) {
+  console.error(
+    `Refusing unsafe non-local host "${requestedHost}". Bind only to localhost, 127.0.0.1, or ::1.`,
+  );
+  process.exit(1);
+}
+
+if (!existsSync(serverPath)) {
+  console.error(`Standalone server not found at ${serverPath}. Rebuild package before running.`);
+  process.exit(1);
+}
+
+async function findFreePort(startPort, host) {
   return new Promise((resolve) => {
     const server = createServer();
-    server.listen(startPort, "127.0.0.1", () => {
-      const { port } = server.address();
+    server.listen(startPort, host, () => {
+      const address = server.address();
+      const port = typeof address === "object" && address ? address.port : startPort;
       server.close(() => resolve(port));
     });
-    server.on("error", () => resolve(findFreePort(startPort + 1)));
+    server.on("error", () => resolve(findFreePort(startPort + 1, host)));
   });
 }
 
@@ -33,22 +81,24 @@ async function waitForServer(url, maxMs = 30000) {
     try {
       const res = await fetch(url);
       if (res.ok || res.status < 500) return true;
-    } catch {}
-    await new Promise((r) => setTimeout(r, 500));
+    } catch {
+      // Server not ready yet.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
   return false;
 }
 
-const port = await findFreePort(requestedPort);
-const url = `http://localhost:${port}`;
+const port = await findFreePort(requestedPort, requestedHost);
+const url = `http://${requestedHost === "::1" ? "[::1]" : requestedHost}:${port}`;
 
-console.log(`\n  mcp-hub-ui starting on ${url} ...\n`);
+console.log(`\n  mcp-hub starting on ${url} ...\n`);
 
-const child = spawn("node", [serverPath], {
+const child = spawn(process.execPath, [serverPath], {
   env: {
     ...process.env,
     PORT: String(port),
-    HOSTNAME: "0.0.0.0",
+    HOSTNAME: requestedHost,
     NODE_ENV: "production",
   },
   stdio: "inherit",
@@ -63,8 +113,15 @@ child.on("close", (code) => process.exit(code ?? 0));
 
 const ready = await waitForServer(url);
 if (ready) {
-  console.log(`  Ready — opening ${url}\n`);
-  await open(url);
+  if (shouldOpenBrowser) {
+    console.log(`  Ready - opening ${url}\n`);
+    await open(url).catch((error) => {
+      console.error("  Browser open failed. Open manually:", url);
+      console.error(`  Reason: ${error.message}`);
+    });
+  } else {
+    console.log(`  Ready - browser auto-open disabled. Visit ${url}\n`);
+  }
 } else {
   console.error("  Server did not respond in time. Open manually:", url);
 }

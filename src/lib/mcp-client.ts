@@ -6,6 +6,7 @@ import {
 } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 
+import { isToolExecutionAllowed } from "@/lib/mcp-authorization";
 import type {
   McpDiscoveredTool,
   McpInspectResponse,
@@ -68,8 +69,8 @@ function buildTransport(server: McpServerConfig) {
 async function createConnectedClient(server: McpServerConfig) {
   const client = new Client(
     {
-      name: "trc-ai-chat-assistant",
-      version: "1.0.0",
+      name: "mcp-hub-ui",
+      version: process.env["npm_package_version"] ?? "1.0.0",
     },
     {
       capabilities: {},
@@ -93,6 +94,7 @@ export function createInspectableServerConfig(server: MutableMcpServer): McpServ
     args: server.args,
     command: server.command,
     connectionStatus: server.connectionStatus ?? "pending",
+    enabled: server.enabled ?? true,
     description: server.description,
     env: server.env,
     errorMessage: server.errorMessage,
@@ -139,12 +141,10 @@ export async function inspectMcpServer(server: McpServerConfig): Promise<McpInsp
             ? server.approvedToolNames.filter((toolName) =>
                 tools.some((tool) => tool.name === toolName),
               )
-            : server.approvalMode === "never"
-              ? tools.map((tool) => tool.name)
-              : [],
+            : [],
         connectionStatus: "connected",
         errorMessage: undefined,
-        lastCheckedAt: new Date().toISOString(),
+        lastCheckedAt: String(Date.now()),
         tools,
       },
     };
@@ -154,8 +154,8 @@ export async function inspectMcpServer(server: McpServerConfig): Promise<McpInsp
         ...server,
         connectionStatus: "error",
         errorMessage:
-          error instanceof Error ? error.message : "Não foi possível conectar ao servidor MCP.",
-        lastCheckedAt: new Date().toISOString(),
+          error instanceof Error ? error.message : "Could not connect to MCP server.",
+        lastCheckedAt: String(Date.now()),
         tools: [],
       },
     };
@@ -171,6 +171,10 @@ export async function executeMcpTool(
   toolName: string,
   args: Record<string, unknown>,
 ) {
+  if (!isToolExecutionAllowed(server, toolName)) {
+    throw new Error(`Tool "${toolName}" is not approved for execution on server "${server.name}".`);
+  }
+
   const { client, close } = await createConnectedClient(server);
 
   try {

@@ -133,15 +133,15 @@ export function normalizeExternalEvent(
       {
         type: "tool_start",
         id: getString(payload.id) ?? crypto.randomUUID(),
-        tool: getString(payload.tool) ?? getString(payload.name) ?? "Ferramenta",
+        tool: getString(payload.tool) ?? getString(payload.name) ?? "Tool",
         title:
           getString(payload.title) ??
           getString(payload.label) ??
-          `Executando ${getString(payload.tool) ?? getString(payload.name) ?? "ferramenta"}`,
+          `Running ${getString(payload.tool) ?? getString(payload.name) ?? "tool"}`,
         reason:
           getString(payload.reason) ??
           getString(payload.description) ??
-          "Ferramenta acionada para coletar contexto da solicitação.",
+          "Tool invoked to collect context for the request.",
       },
     ];
   }

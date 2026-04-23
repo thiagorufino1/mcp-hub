@@ -40,12 +40,12 @@ export function MessageBubble({ message, onFeedback }: Props) {
     return (
       <div className="flex w-full justify-end">
         <div
-          className="max-w-[85%] rounded-[24px] rounded-br-[10px] px-4 py-4 text-white shadow-[0_16px_34px_rgba(9,105,218,0.24)] sm:max-w-[500px]"
-          style={{ background: "linear-gradient(135deg, hsl(207, 100%, 35%), hsl(213, 100%, 19%))" }}
+          className="max-w-[85%] rounded-[24px] rounded-br-[10px] px-4 py-4 text-white shadow-[0_16px_34px_rgba(9,105,218,0.24)] dark:shadow-none sm:max-w-[500px]"
+          style={{ background: "var(--gradient-action)" }}
         >
           <div className="mb-3 flex items-center gap-3">
-            <Avatar className="size-8 border border-white/20 bg-white/12">
-              <AvatarFallback className="bg-white/90 text-[var(--color-primary)]">
+            <Avatar className="size-8 border-0">
+              <AvatarFallback className="text-white" style={{ background: "var(--gradient-action)" }}>
                 <User className="size-4" />
               </AvatarFallback>
             </Avatar>
@@ -73,8 +73,8 @@ export function MessageBubble({ message, onFeedback }: Props) {
       >
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Avatar className="size-8 border border-[var(--color-primary)]/20 bg-[var(--color-primary-soft)]">
-              <AvatarFallback className="bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
+            <Avatar className="size-8 border-0">
+              <AvatarFallback className="text-white" style={{ background: "var(--gradient-action)" }}>
                 <Bot className="size-4" />
               </AvatarFallback>
             </Avatar>

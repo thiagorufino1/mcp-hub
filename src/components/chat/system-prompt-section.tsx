@@ -94,8 +94,8 @@ function PromptDialog({
           </Button>
           <Button
             disabled={!content.trim()}
-            className="rounded-lg text-white shadow-[0_4px_14px_rgba(9,105,218,0.30)] hover:opacity-90 hover:shadow-[0_4px_18px_rgba(9,105,218,0.40)]"
-            style={{ background: "linear-gradient(135deg, hsl(207, 100%, 35%), hsl(213, 100%, 19%))" }}
+            className="rounded-lg text-white shadow-[0_4px_14px_rgba(9,105,218,0.30)] hover:opacity-90 hover:shadow-[0_4px_18px_rgba(9,105,218,0.40)] dark:shadow-none dark:hover:shadow-none"
+            style={{ background: "var(--gradient-action)" }}
             onClick={handleSave}
           >
             {state.mode === "edit" ? <PencilLine className="size-4" /> : <CheckCircle2 className="size-4" />}
@@ -141,7 +141,7 @@ export function SystemPromptSection({
         <div className="flex items-center gap-3">
           <div
             className="flex size-8 shrink-0 items-center justify-center rounded-full"
-            style={{ background: "linear-gradient(135deg, hsl(207, 100%, 35%), hsl(213, 100%, 19%))" }}
+            style={{ background: "var(--gradient-action)" }}
           >
             <BookText className="size-3.5 text-white" />
           </div>
@@ -177,7 +177,7 @@ export function SystemPromptSection({
             type="button"
             onClick={() => setDialog({ mode: "add" })}
             className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-lg text-[13px] font-semibold text-white shadow-sm transition hover:opacity-90 active:scale-[0.98]"
-            style={{ background: "linear-gradient(135deg, hsl(207, 100%, 35%), hsl(213, 100%, 19%))" }}
+            style={{ background: "var(--gradient-action)" }}
           >
             <Plus className="size-3.5" />
             {t("sidebar.addPrompt")}

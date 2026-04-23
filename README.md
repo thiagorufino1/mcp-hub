@@ -1,21 +1,34 @@
-# mcp-hub-ui
+# mcp-hub
 
 Local web UI for testing LLMs, MCP servers, tools, and chat workflows - runs entirely on your machine via `npx`.
 
 ## Quick Start
 
 ```bash
-npx @thiagorufino/mcp-hub-ui
+npx @thiagorufino/mcp-hub
 ```
 
-Opens automatically at `http://localhost:3000`. No account, no cloud, no setup.
+Starts on `http://127.0.0.1:3000` by default and opens the browser automatically. If the port is already taken, the CLI picks the next free local port.
+
+No account. No cloud backend. Local-first runtime.
 
 ```bash
 # Custom port
-npx @thiagorufino/mcp-hub-ui --port 4010
+npx @thiagorufino/mcp-hub --port 4010
+
+# Bind explicitly to localhost without auto-opening the browser
+npx @thiagorufino/mcp-hub --host localhost --port 3000 --no-open
+
+# IPv6 loopback is also allowed
+npx @thiagorufino/mcp-hub --host ::1
+
+# Show all options
+npx @thiagorufino/mcp-hub --help
 ```
 
 **Requires Node.js 20+**
+
+The public CLI refuses non-local host binding. Allowed hosts are `127.0.0.1`, `localhost`, and `::1`.
 
 ---
 
@@ -62,6 +75,12 @@ Inspect tools, schemas, and execute calls directly from the sidebar.
 - Audio input support
 - MCP-aware chat requests - the app reuses a fresh validated MCP snapshot before exposing tools to the model
 
+### Packaging
+
+- Distributed as a public npm CLI: `@thiagorufino/mcp-hub`
+- Ships a standalone Next.js production bundle for `npx` execution
+- Includes verification scripts for package layout, CLI behavior, and smoke testing before publish
+
 ---
 
 ## Local Development
@@ -81,6 +100,23 @@ npm run dev
 | `npm run build` | Production build |
 | `npm run build:package` | Build + bundle for npx distribution |
 | `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript type check (no emit) |
+| `npm run test` | Unit and manifest checks |
+| `npm run test:smoke` | Start the packaged CLI and verify HTTP boot |
+| `npm run prepare:publish-dir` | Build the publish-ready directory |
+| `npm run pack:check` | Validate the tarball produced for publish |
+| `npm run publish:package-dir` | Alias for preparing the publish-ready directory |
+
+### Publish Checklist
+
+```bash
+npm run typecheck
+npm run test
+npm run build:package
+npm run pack:check
+```
+
+If all four pass, the package is ready to commit and publish.
 
 ---
 
@@ -96,11 +132,22 @@ npm run dev
 
 ## Security
 
-Runs 100% locally. Credentials are stored only in your browser's `localStorage` and never leave your machine.
+Runs locally on loopback interfaces only. Credentials are sent only to providers you configure and are not stored in any remote backend owned by this project.
 
-- Do not expose the port to untrusted networks
-- Do not paste real API keys into issues or screenshots
-- MCP stdio servers are spawned as child processes - only connect to servers you trust
+- Sensitive LLM credentials and MCP auth headers/env are stored only in browser `sessionStorage`
+- Existing legacy local credentials are migrated into `sessionStorage` and removed from `localStorage`
+- Closing the browser tab/session clears sensitive config unless you re-enter it
+- Chat history and non-sensitive UI preferences may still persist locally for DX
+- MCP `stdio` servers are spawned as child processes, so only connect to servers you trust
+- The public CLI intentionally refuses non-local host binding to avoid exposing local process execution primitives over the network
+- See [SECURITY.md](./SECURITY.md) for the security model
+
+## Limitations
+
+- This package is a CLI app distributed through npm, not a library API
+- First launch may be heavier because the standalone Next.js app is shipped in the tarball
+- Provider credentials are session-scoped by design, so you must re-enter them in a new browser session
+- Remote multi-user deployment is out of scope for the public package
 
 ---
 
@@ -108,4 +155,4 @@ Runs 100% locally. Credentials are stored only in your browser's `localStorage` 
 
 - GitHub: https://github.com/thiagorufino1/mcp-hub-ui
 - Issues: https://github.com/thiagorufino1/mcp-hub-ui/issues
-- npm: https://www.npmjs.com/package/@thiagorufino/mcp-hub-ui
+- npm: https://www.npmjs.com/package/@thiagorufino/mcp-hub

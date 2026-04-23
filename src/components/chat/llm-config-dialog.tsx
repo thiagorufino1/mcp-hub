@@ -119,8 +119,8 @@ export function LlmConfigDialog({ initialConfig, isOpen, onClose, onSave }: Prop
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !isSaving) onClose(); }}>
-      <DialogContent className="max-w-xl gap-0 overflow-hidden rounded-2xl border border-[#dbe4f1] bg-[var(--color-surface)] p-0 shadow-[0_20px_48px_rgba(15,23,42,0.10)]">
-        <DialogHeader className="border-b border-[#dbe4f1] bg-[var(--color-surface)] px-6 py-4">
+      <DialogContent className="max-w-xl gap-0 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-0 shadow-[0_10px_24px_rgba(15,23,42,0.055)] dark:shadow-[0_24px_64px_rgba(0,0,0,0.45)]">
+        <DialogHeader className="border-b border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-4">
           <DialogTitle className="text-base font-semibold text-foreground">
             {initialConfig ? t("llm.editTitle") : t("llm.addTitle")}
           </DialogTitle>
@@ -132,7 +132,7 @@ export function LlmConfigDialog({ initialConfig, isOpen, onClose, onSave }: Prop
         <form className="app-scroll flex max-h-[calc(90vh-160px)] flex-col gap-5 overflow-y-auto bg-[var(--color-bg)] px-6 py-5" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("llm.provider")}</Label>
-            <div className="grid grid-cols-3 gap-2 rounded-2xl border border-[#dbe4f1] bg-[var(--color-surface-muted)] p-2 sm:grid-cols-4 md:grid-cols-5">
+            <div className="grid grid-cols-3 gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-2 sm:grid-cols-4 md:grid-cols-5">
               {PROVIDERS.map((provider) => {
                 const isSelected = selectedProvider === provider.id;
                 return (
@@ -143,22 +143,19 @@ export function LlmConfigDialog({ initialConfig, isOpen, onClose, onSave }: Prop
                     className={cn(
                       "flex min-h-[88px] flex-col items-center justify-center rounded-2xl border px-2 py-3 text-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       isSelected
-                        ? "border-sky-200 bg-white shadow-[0_10px_24px_rgba(15,23,42,0.10)] ring-1 ring-sky-100"
-                        : "border-transparent bg-transparent hover:border-white/80 hover:bg-white/70 hover:shadow-[0_6px_18px_rgba(15,23,42,0.06)]",
+                        ? "border-[var(--color-primary)] bg-[var(--color-surface)] ring-1 ring-[var(--color-primary-soft)] shadow-none dark:shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
+                        : "border-[var(--color-border)] bg-[var(--color-surface)] shadow-none hover:border-[var(--color-primary-soft)] dark:hover:shadow-[0_8px_20px_rgba(0,0,0,0.25)]",
                     )}
                   >
                     <ProviderLogo
                       provider={provider.id}
-                      className={cn(
-                        "mb-2 size-12 rounded-2xl transition-transform duration-200",
-                        isSelected && "scale-105"
-                      )}
+                      className="mb-2 size-12 rounded-2xl"
                       iconClassName="size-6"
                     />
                     <span
                       className={cn(
                         "w-full text-[12px] font-semibold leading-tight",
-                        isSelected ? "text-slate-950" : "text-slate-700"
+                        isSelected ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"
                       )}
                     >
                       {provider.shortName}
@@ -191,7 +188,7 @@ export function LlmConfigDialog({ initialConfig, isOpen, onClose, onSave }: Prop
             </div>
           )}
 
-          <DialogFooter className="items-center justify-end gap-3 border-t border-[#dbe4f1] pt-4 sm:flex-row">
+          <DialogFooter className="items-center justify-end gap-3 border-t border-[var(--color-border)] pt-4 sm:flex-row">
             <div className="flex items-center gap-2">
               <Button
                 type="button"
@@ -215,7 +212,8 @@ export function LlmConfigDialog({ initialConfig, isOpen, onClose, onSave }: Prop
               <Button
                 type="submit"
                 disabled={isSaving || !canSave}
-                className="rounded-lg bg-[var(--color-primary)] text-white shadow-none hover:bg-[var(--color-primary-hover)]"
+                className="rounded-lg text-white shadow-none hover:opacity-90"
+                style={{ background: "var(--gradient-action)" }}
               >
                 {isSaving ? <LoaderCircle className="size-4 animate-spin" /> : initialConfig ? <PencilLine className="size-4" /> : <CheckCircle2 className="size-4" />}
                 {isSaving ? t("sidebar.saving") : initialConfig ? t("sidebar.save") : t("sidebar.add")}

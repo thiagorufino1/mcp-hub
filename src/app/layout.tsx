@@ -6,8 +6,8 @@ import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MCP Hub UI",
-  description: "Portal para testar MCPs com LLMs publicos e internos.",
+  title: "MCP Hub",
+  description: "Local web UI for testing MCP servers and LLMs.",
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",

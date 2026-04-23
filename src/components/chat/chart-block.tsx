@@ -84,7 +84,7 @@ function Legend({ spec }: { spec: ChartSpec }) {
   return (
     <div className="mt-4 flex flex-wrap gap-2">
       {spec.series.map((series) => (
-        <div key={series.name} className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-2.5 py-1 text-[11px] text-muted-foreground">
+        <div key={series.name} className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-1 text-[11px] text-muted-foreground">
           <span className="size-2.5 rounded-full" style={{ backgroundColor: series.color }} />
           {series.name}
         </div>
@@ -252,7 +252,7 @@ function CircularChart({ spec }: { spec: ChartSpec }) {
           const percentage = `${Math.round((value / total) * 100)}%`;
 
           return (
-            <div key={label + index} className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-white px-3 py-2">
+            <div key={label + index} className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
               <div className="flex min-w-0 items-center gap-2">
                 <span className="size-3 shrink-0 rounded-full" style={{ backgroundColor: color }} />
                 <span className="truncate text-[12px] font-medium text-foreground">{label}</span>

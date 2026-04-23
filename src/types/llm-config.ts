@@ -22,5 +22,6 @@ export type LLMConfig =
   | { provider: "mistral"; apiKey: string; model: string }
   | { provider: "deepseek"; apiKey: string; model: string };
 
-export const LLM_CONFIG_STORAGE_KEY = "mcp-portal-llm-config";
-export const LLM_CONFIGURED_COOKIE = "mcp-portal-configured";
+export const LLM_CONFIG_STORAGE_KEY = "mcp-hub-llm-config";
+export const LEGACY_LLM_CONFIG_STORAGE_KEY = "mcp-hub-llm-config";
+export const LLM_CONFIGURED_COOKIE = "mcp-hub-configured";

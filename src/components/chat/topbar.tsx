@@ -12,16 +12,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from "@/lib/utils";
 
 type Props = {
-  connectedCount: number;
-  totalCount: number;
   onNewConversation?: () => void;
   onToggleSidebar?: () => void;
   onCopySession?: () => Promise<void>;
 };
 
 export function Topbar({
-  connectedCount,
-  totalCount,
   onNewConversation,
   onToggleSidebar,
   onCopySession,
@@ -37,7 +33,7 @@ export function Topbar({
     window.setTimeout(() => setCopiedSession(false), 2000);
   }
 
-  const cieloHeaderBackground = "linear-gradient(135deg, hsl(207, 100%, 35%), hsl(213, 100%, 19%))";
+  const cieloHeaderBackground = "var(--gradient-action)";
 
   return (
     <header
@@ -48,34 +44,16 @@ export function Topbar({
     >
       <div className={cn("mx-auto flex h-[52px] w-full max-w-[1480px] items-center justify-between gap-4 px-3 sm:px-4 lg:px-6 transition-all duration-300")}>
         <TooltipProvider delayDuration={120}>
-          <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex min-w-0 items-center">
             <div className="flex items-center gap-2">
-              <p className="text-[16px] font-semibold tracking-[-0.04em] text-white" translate="no">
-                MCP <span className="text-white/70">Hub UI</span>
+              <p className="text-[20px] font-semibold tracking-[-0.05em] text-white sm:text-[22px]" translate="no">
+                MCP <span className="text-white/70">Hub</span>
               </p>
             </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="cursor-help rounded-md border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-mono leading-none tracking-widest text-white/90 shadow-sm backdrop-blur-[2px]">
-                  {t("app.version") || "v1.0.0"}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="z-[999] border-none bg-slate-950 px-3 py-1.5 text-[11.5px] font-medium text-slate-100 shadow-2xl shadow-black/80">
-                mcp-hub-ui
-              </TooltipContent>
-            </Tooltip>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="hidden items-center gap-0.5 rounded-full bg-white/[0.09] p-1 shadow-[0_8px_18px_rgba(8,24,64,0.10)] backdrop-blur-[4px] sm:flex">
-              <div className="inline-flex h-7 items-center gap-2 rounded-full bg-transparent px-3 text-white">
-                <Boxes className="size-[13px]" />
-                <span className="text-[12px] font-medium">{t("topbar.mcpCount") || "MCPs"}</span>
-                <span className="rounded-full bg-white/[0.16] px-2 py-0.5 text-[11px] text-white">
-                  {connectedCount}/{totalCount}
-                </span>
-              </div>
-
               <Button
                 variant="ghost"
                 size="sm"
@@ -112,6 +90,14 @@ export function Topbar({
                   <span className="text-[12px] font-medium">GitHub</span>
                 </Button>
               </a>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 rounded-full px-2.5 text-white/92 shadow-none hover:bg-white/[0.08] hover:text-white"
+              >
+                <span className="text-[12px] font-medium">{t("app.version") || "v1.0.0"}</span>
+              </Button>
             </div>
 
             <Button

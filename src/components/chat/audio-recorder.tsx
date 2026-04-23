@@ -168,7 +168,7 @@ export function AudioRecorder({ disabled = false, onTranscriptReady }: Props) {
           <button
             aria-label={t("audio.stopRecording")}
             className="inline-flex size-8 items-center justify-center rounded-full text-white shadow-sm transition hover:opacity-90 focus-visible:outline-none"
-            style={{ background: "linear-gradient(135deg, hsl(207, 100%, 35%), hsl(213, 100%, 19%))" }}
+            style={{ background: "var(--gradient-action)" }}
             onClick={stopRecording}
             type="button"
           >

@@ -10,11 +10,14 @@ type Props = {
   provider: ProviderType;
   className?: string;
   iconClassName?: string;
+  flat?: boolean;
 };
 
-export function ProviderLogo({ provider, className, iconClassName }: Props) {
+export function ProviderLogo({ provider, className, iconClassName, flat = false }: Props) {
   const shellClassName =
-    "inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_12px_rgba(15,23,42,0.05)]";
+    flat
+      ? "inline-flex items-center justify-center rounded-2xl border border-[color-mix(in_srgb,var(--color-border)_55%,transparent)] bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-none"
+      : "inline-flex items-center justify-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-none dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)]";
 
   const sizeMatch = iconClassName?.match(/size-(\d+)/);
   const sizePx = sizeMatch ? parseInt(sizeMatch[1]) * 4 : 24;

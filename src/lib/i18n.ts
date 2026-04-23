@@ -22,6 +22,9 @@ export type TranslationKey =
   | "sidebar.failed"
   | "sidebar.pending"
   | "sidebar.reconnecting"
+  | "sidebar.disabled"
+  | "sidebar.enableServer"
+  | "sidebar.disableServer"
   | "sidebar.localCommand"
   | "sidebar.remoteEndpoint"
   | "sidebar.connectionFailed"
@@ -196,6 +199,9 @@ export const translations: Record<AppLocale, TranslationTable> = {
     "sidebar.failed": "Falha",
     "sidebar.pending": "Pendente",
     "sidebar.reconnecting": "Reconectando",
+    "sidebar.disabled": "Desabilitado",
+    "sidebar.enableServer": "Habilitar servidor",
+    "sidebar.disableServer": "Desabilitar servidor",
     "sidebar.localCommand": "Comando local",
     "sidebar.remoteEndpoint": "Endpoint remoto",
     "sidebar.connectionFailed": "Falha de conexão com o endpoint.",
@@ -367,6 +373,9 @@ export const translations: Record<AppLocale, TranslationTable> = {
     "sidebar.failed": "Failed",
     "sidebar.pending": "Pending",
     "sidebar.reconnecting": "Reconnecting",
+    "sidebar.disabled": "Disabled",
+    "sidebar.enableServer": "Enable server",
+    "sidebar.disableServer": "Disable server",
     "sidebar.localCommand": "Local command",
     "sidebar.remoteEndpoint": "Remote endpoint",
     "sidebar.connectionFailed": "Connection to endpoint failed.",

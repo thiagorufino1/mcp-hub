@@ -140,13 +140,13 @@ function MarkdownImage({ src, alt }: { src?: string | Blob; alt?: string }) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         alt={alt ?? ""}
-        className="block h-auto max-h-[460px] w-full object-contain bg-white"
+        className="block h-auto max-h-[460px] w-full object-contain bg-[var(--color-surface-muted)]"
         loading="lazy"
         referrerPolicy="no-referrer"
         src={normalizedSrc}
         onError={() => setFailed(true)}
       />
-      {alt ? <figcaption className="border-t border-[var(--color-border)] bg-white px-3 py-2 text-xs text-muted-foreground">{alt}</figcaption> : null}
+      {alt ? <figcaption className="border-t border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2 text-xs text-muted-foreground">{alt}</figcaption> : null}
     </figure>
   );
 }

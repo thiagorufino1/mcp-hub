@@ -1,4 +1,5 @@
 import { executeMcpTool } from "@/lib/mcp-client";
+import { isToolExecutionAllowed } from "@/lib/mcp-authorization";
 import type { McpServerConfig } from "@/types/mcp";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -11,31 +12,31 @@ function isRecordOfStrings(value: unknown): value is Record<string, string> {
 
 function normalizeServerPayload(server: Partial<McpServerConfig>) {
   if (!server.id || !server.name || !server.transport) {
-    return { error: "Configuracao MCP invalida." as const };
+    return { error: "Invalid MCP configuration." as const };
   }
 
   if (!["stdio", "sse", "streamable-http"].includes(server.transport)) {
-    return { error: "Transporte MCP invalido." as const };
+    return { error: "Invalid MCP transport." as const };
   }
 
   if (server.args && (!Array.isArray(server.args) || server.args.some((arg) => typeof arg !== "string"))) {
-    return { error: "Os argumentos do MCP precisam ser uma lista de texto." as const };
+    return { error: "MCP args must be an array of strings." as const };
   }
 
   if (server.env && !isRecordOfStrings(server.env)) {
-    return { error: "As variaveis de ambiente do MCP sao invalidas." as const };
+    return { error: "MCP env must be a string record." as const };
   }
 
   if (server.headers && !isRecordOfStrings(server.headers)) {
-    return { error: "Os headers do MCP sao invalidos." as const };
+    return { error: "MCP headers must be a string record." as const };
   }
 
   if (server.transport === "stdio" && !server.command?.trim()) {
-    return { error: "Informe o comando do servidor MCP." as const };
+    return { error: "stdio transport requires a command." as const };
   }
 
   if (server.transport !== "stdio" && !server.url?.trim()) {
-    return { error: "Informe a URL do servidor MCP." as const };
+    return { error: "Remote transport requires a URL." as const };
   }
 
   return {
@@ -46,6 +47,7 @@ function normalizeServerPayload(server: Partial<McpServerConfig>) {
       command: server.command?.trim(),
       connectionStatus: server.connectionStatus ?? "pending",
       description: server.description?.trim() || undefined,
+      enabled: server.enabled ?? true,
       env: server.env ?? {},
       errorMessage: server.errorMessage,
       headers: server.headers ?? {},
@@ -65,7 +67,7 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as { server?: Partial<McpServerConfig>; toolName?: string; args?: unknown };
   } catch {
-    return Response.json({ error: "Corpo da requisicao invalido." }, { status: 400 });
+    return Response.json({ error: "Invalid request body." }, { status: 400 });
   }
 
   const normalized = normalizeServerPayload(body.server ?? {});
@@ -74,19 +76,24 @@ export async function POST(request: Request) {
   }
 
   if (typeof body.toolName !== "string" || body.toolName.trim().length === 0) {
-    return Response.json({ error: "Informe a tool do MCP." }, { status: 400 });
+    return Response.json({ error: "toolName is required." }, { status: 400 });
+  }
+
+  const toolName = body.toolName.trim();
+  if (!isToolExecutionAllowed(normalized.server, toolName)) {
+    return Response.json({ error: `Tool "${toolName}" is not approved for execution.` }, { status: 403 });
   }
 
   if (!isRecord(body.args)) {
-    return Response.json({ error: "Os argumentos da tool precisam ser um objeto JSON." }, { status: 400 });
+    return Response.json({ error: "args must be a JSON object." }, { status: 400 });
   }
 
   try {
-    const result = await executeMcpTool(normalized.server, body.toolName.trim(), body.args);
+    const result = await executeMcpTool(normalized.server, toolName, body.args);
     return Response.json({ ok: true, result });
   } catch (error) {
     return Response.json(
-      { error: error instanceof Error ? error.message : "Falha ao executar a tool MCP." },
+      { error: error instanceof Error ? error.message : "Failed to execute MCP tool." },
       { status: 422 },
     );
   }

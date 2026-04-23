@@ -1,5 +1,5 @@
 {
-  "name": "@thiagorufino/mcp-hub-ui",
+  "name": "@thiagorufino/mcp-hub",
   "version": "1.0.0",
   "private": false,
   "description": "Local web UI for testing LLMs, MCP servers, tools, and chat workflows via npx",
@@ -17,22 +17,24 @@
     "access": "public"
   },
   "bin": {
-    "mcp-hub-ui": "./bin/mcp-portal.mjs"
+    "mcp-hub": "./bin/mcp-portal.mjs"
   },
   "files": [
     ".next/standalone",
-    ".next/static",
-    "public",
-    "bin",
-    "scripts"
+    "bin"
   ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
-    "build:package": "next build && node scripts/copy-standalone.mjs",
-    "prepack": "npm run build:package"
+    "lint": "eslint . --ignore-pattern .next --ignore-pattern .next-package",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.test.mjs",
+    "test:smoke": "npm run build:package && node scripts/smoke-test-package.mjs",
+    "build:package": "node scripts/build-package.mjs",
+    "prepare:publish-dir": "npm run build:package && node scripts/prepare-publish-dir.mjs",
+    "pack:check": "node scripts/check-pack.mjs",
+    "publish:package-dir": "npm run prepare:publish-dir"
   },
   "engines": {
     "node": ">=20"
@@ -52,6 +54,7 @@
   ],
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^4.0.96",
+    "@ai-sdk/anthropic": "^3.0.71",
     "@ai-sdk/azure": "^3.0.54",
     "@ai-sdk/deepseek": "^2.0.29",
     "@ai-sdk/google": "^3.0.64",
@@ -76,7 +79,6 @@
     "next": "^16.2.1",
     "next-themes": "^0.4.6",
     "open": "^11.0.0",
-    "openai": "^6.33.0",
     "react": "^19.2.4",
     "react-circle-flags": "^0.0.29",
     "react-dom": "^19.2.4",

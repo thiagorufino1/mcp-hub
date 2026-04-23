@@ -52,7 +52,7 @@ export function ToolActivityCard({ event }: { event: ToolEvent }) {
       <div className="workspace-panel rounded-[20px] px-3 py-2.5 sm:px-4">
         <button className="flex w-full items-center gap-3 text-left" onClick={() => setIsExpanded((current) => !current)} type="button">
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-primary)]/12 bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full text-white" style={{ background: "var(--gradient-action)" }}>
               <Wrench className="size-4" />
             </div>
 
@@ -91,7 +91,7 @@ export function ToolActivityCard({ event }: { event: ToolEvent }) {
             {event.argsText ? (
               <div>
                 <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("tool.arguments")}</p>
-                <pre className="app-scroll max-h-[120px] overflow-x-auto rounded-[14px] border border-[var(--color-border)] bg-white px-3 py-2 text-[11px] text-slate-600 dark:bg-white dark:text-slate-700">
+                <pre className="app-scroll max-h-[120px] overflow-x-auto rounded-[14px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2 text-[11px] text-[var(--color-text-secondary)]">
                   {event.argsText}
                 </pre>
               </div>
@@ -100,7 +100,7 @@ export function ToolActivityCard({ event }: { event: ToolEvent }) {
             {event.summary ? (
               <div>
                 <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("tool.result")}</p>
-                <pre className="app-scroll max-h-[260px] overflow-y-auto break-all whitespace-pre-wrap rounded-[14px] border border-[var(--color-border)] bg-white px-3 py-2 font-mono text-[11px] leading-5 text-slate-600 dark:bg-white dark:text-slate-700">
+                <pre className="app-scroll max-h-[260px] overflow-y-auto break-all whitespace-pre-wrap rounded-[14px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2 font-mono text-[11px] leading-5 text-[var(--color-text-secondary)]">
                   {formattedSummary}
                 </pre>
               </div>

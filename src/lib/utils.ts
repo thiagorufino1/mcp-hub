@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatTime(date: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
+  return new Intl.DateTimeFormat(undefined, {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(date));
@@ -14,5 +14,5 @@ export function formatTime(date: string) {
 
 export function formatTokenCount(value: number | undefined) {
   if (typeof value !== "number" || Number.isNaN(value)) return "--";
-  return new Intl.NumberFormat("pt-BR").format(value);
+  return new Intl.NumberFormat(undefined).format(value);
 }

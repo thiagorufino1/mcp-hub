@@ -4,6 +4,7 @@ import type { ToolSet } from "ai";
 import { z } from "zod";
 
 import { getModel } from "@/lib/ai-provider";
+import { getApprovedTools } from "@/lib/mcp-authorization";
 import { createInspectableServerConfig, inspectMcpServer } from "@/lib/mcp-client";
 import { executeMcpTool } from "@/lib/mcp-client";
 import type { ChatStreamEvent, Message, TokenUsage } from "@/types/chat";
@@ -18,6 +19,7 @@ const McpServerSchema = z.object({
   args: z.array(z.string()).optional().default([]),
   command: z.string().trim().optional(),
   description: z.string().trim().optional(),
+  enabled: z.boolean().optional().default(true),
   env: z.record(z.string(), z.string()).optional().default({}),
   errorMessage: z.string().optional(),
   headers: z.record(z.string(), z.string()).optional().default({}),
@@ -34,14 +36,14 @@ const McpServerSchema = z.object({
   }
 
   return true;
-}, { message: "Informe o comando do servidor MCP.", path: ["command"] })
+}, { message: "stdio transport requires a command.", path: ["command"] })
   .refine((data) => {
     if (data.transport !== "stdio" && (!data.url || data.url.length === 0)) {
       return false;
     }
 
     return true;
-  }, { message: "Informe a URL do servidor MCP.", path: ["url"] });
+  }, { message: "Remote transport requires a URL.", path: ["url"] });
 
 const ChatRequestBodySchema = z.object({
   customPrompt: z.string().max(8000).optional(),
@@ -81,7 +83,7 @@ export async function POST(request: Request) {
     rawBody = await request.json();
   } catch {
     return streamSingleEvent(
-      { type: "error", message: "O corpo da requisicao nao contem JSON valido." },
+      { type: "error", message: "Request body must be valid JSON." },
       400,
     );
   }
@@ -91,7 +93,7 @@ export async function POST(request: Request) {
     return streamSingleEvent(
       {
         type: "error",
-        message: parsed.error.issues[0]?.message ?? "Erro de validacao",
+        message: parsed.error.issues[0]?.message ?? "Validation error.",
       },
       400,
     );
@@ -111,7 +113,7 @@ async function streamWithAISDK(body: ChatRequestBody) {
 
   if (!userPrompt) {
     return streamSingleEvent(
-      { type: "error", message: "A mensagem nao pode estar vazia." },
+      { type: "error", message: "Message cannot be empty." },
       400,
     );
   }
@@ -173,7 +175,7 @@ async function streamWithAISDK(body: ChatRequestBody) {
         if (!hasText) {
           enqueue({
             type: "error",
-            message: "O LLM respondeu sem conteudo textual apos o ciclo de tools.",
+            message: "LLM returned no text content after tool cycles.",
           });
           controller.close();
           return;
@@ -206,12 +208,14 @@ async function streamWithAISDK(body: ChatRequestBody) {
 }
 
 async function resolveLiveMcpServers(mcpServers: McpServerConfig[]) {
-  if (mcpServers.length === 0) {
+  const enabledServers = mcpServers.filter((server) => server.enabled);
+
+  if (enabledServers.length === 0) {
     return [];
   }
 
   const inspectedServers = await Promise.all(
-    mcpServers.map(async (server) => {
+    enabledServers.map(async (server) => {
       const lastCheckedAt = Number(server.lastCheckedAt);
       const cacheIsFresh =
         Number.isFinite(lastCheckedAt) &&
@@ -319,9 +323,9 @@ function buildAiSdkTools(
             id: toolEventId,
             requestId,
             tool: executableTool.displayName,
-            title: `Executando ${executableTool.displayName}`,
+            title: `Running ${executableTool.displayName}`,
             argsText,
-            reason: `Servidor ${executableTool.server.name}. Args: ${truncate(argsText || "{}", 180)}`,
+            reason: `Server ${executableTool.server.name}. Args: ${truncate(argsText || "{}", 180)}`,
           });
 
           try {
@@ -353,7 +357,7 @@ function buildAiSdkTools(
               summary: truncate(errorMessage, 2000),
             });
 
-            return `Erro ao executar ${executableTool.displayName}: ${errorMessage}`;
+            return `Tool ${executableTool.displayName} failed: ${errorMessage}`;
           }
         },
       }),
@@ -381,20 +385,20 @@ function streamMockResponse(body: ChatRequestBody) {
   const { message, mcpServers = [], requestId } = body;
   const encoder = new TextEncoder();
   const assistantId = `assistant-${Date.now()}`;
-  const userPrompt = message?.trim() || "Solicitacao sem conteudo";
+  const userPrompt = message?.trim() || "Empty message";
   const preferredServer = mcpServers[0];
 
   const responseText = [
-    "### Modo de Demonstracao Ativo",
+    "### Demo Mode Active",
     "",
-    `Recebi sua mensagem: **"${userPrompt}"**`,
+    `Your message: **"${userPrompt}"**`,
     "",
     preferredServer
-      ? `O servidor MCP **${preferredServer.name}** esta integrado e pronto para uso com **${preferredServer.tools.length}** ferramentas disponiveis.`
-      : "Nenhum servidor MCP foi conectado ate o momento para expandir minhas capacidades.",
+      ? `MCP server **${preferredServer.name}** is connected with **${preferredServer.tools.length}** available tools.`
+      : "No MCP server connected yet.",
     "",
     "---",
-    "Dica: para ativar respostas reais da IA e interagir com as ferramentas do portal, adicione um provedor de LLM na barra lateral de configuracoes.",
+    "To enable real AI responses, add an LLM provider in the settings sidebar.",
   ].join("\n");
 
   const stream = new ReadableStream({
@@ -438,7 +442,7 @@ function streamSingleEvent(event: ChatStreamEvent, status = 200) {
 
 function buildExecutableTools(mcpServers: McpServerConfig[]): ExecutableTool[] {
   return mcpServers.flatMap((server) =>
-    server.tools.map((toolDefinition) => ({
+    getApprovedTools(server).map((toolDefinition) => ({
       displayName: toolDefinition.name,
       functionName: buildToolFunctionName(server.id, toolDefinition.name),
       inputSchema:
@@ -469,7 +473,8 @@ function buildMcpContext(mcpServers: McpServerConfig[]) {
 
   const serialized = mcpServers
     .map((server, index) => {
-      const tools = server.tools
+      const approvedTools = getApprovedTools(server);
+      const tools = approvedTools
         .map((toolDefinition) => sanitizePromptValue(toolDefinition.name, 80))
         .filter(Boolean)
         .join(", ");
@@ -477,7 +482,7 @@ function buildMcpContext(mcpServers: McpServerConfig[]) {
       const serverName = sanitizePromptValue(server.name, 80) || `Server ${index + 1}`;
       const transport = sanitizePromptValue(server.transport, 24);
 
-      return `${index + 1}. ${serverName} (${transport})${description ? ` - ${description}` : ""}${tools ? ` - tools: ${tools}` : ""}`;
+      return `${index + 1}. ${serverName} (${transport})${description ? ` - ${description}` : ""}${tools ? ` - approved tools: ${tools}` : " - approved tools: none"}`;
     })
     .join("\n");
 
@@ -490,7 +495,7 @@ function buildMcpContext(mcpServers: McpServerConfig[]) {
 }
 
 function extractToolResultText(result: unknown): string {
-  if (!result || typeof result !== "object") return "Tool executada sem retorno estruturado.";
+  if (!result || typeof result !== "object") return "Tool returned no structured content.";
 
   const candidate = result as {
     content?: Array<Record<string, unknown>>;
@@ -510,7 +515,7 @@ function extractToolResultText(result: unknown): string {
 
   if (textParts.length > 0) return textParts.join("\n");
   if (candidate.structuredContent) return JSON.stringify(candidate.structuredContent, null, 2);
-  return candidate.isError ? "A tool retornou erro sem detalhes." : "Tool executada.";
+  return candidate.isError ? "Tool returned an error with no details." : "Tool executed.";
 }
 
 function buildToolConversationContent(result: unknown): string {
@@ -564,5 +569,5 @@ function sanitizePromptValue(value: unknown, limit: number) {
 }
 
 function extractErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Falha ao consultar o LLM.";
+  return error instanceof Error ? error.message : "LLM request failed.";
 }
