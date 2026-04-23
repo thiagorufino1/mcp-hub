@@ -30,7 +30,7 @@
     "lint": "eslint . --ignore-pattern .next --ignore-pattern .next-package",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs",
-    "test:smoke": "npm run build:package && node scripts/smoke-test-package.mjs",
+    "test:smoke": "node scripts/smoke-test-package.mjs",
     "build:package": "node scripts/build-package.mjs",
     "prepare:publish-dir": "npm run build:package && node scripts/prepare-publish-dir.mjs",
     "pack:check": "node scripts/check-pack.mjs",

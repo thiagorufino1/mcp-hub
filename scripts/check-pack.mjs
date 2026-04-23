@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 const standaloneServerPath = join(root, ".next", "standalone", "server.js");
+const publishDir = join(root, ".npm-package");
 
 function extractLastJsonArray(raw) {
   const trimmed = raw.trim();
@@ -23,14 +24,24 @@ function extractLastJsonArray(raw) {
 }
 
 try {
-  execSync("npm run prepare:publish-dir", {
-    cwd: root,
-    encoding: "utf8",
-    stdio: "pipe",
-  });
+  if (!existsSync(standaloneServerPath)) {
+    execSync("npm run build:package", {
+      cwd: root,
+      encoding: "utf8",
+      stdio: "pipe",
+    });
+  }
 
   if (!existsSync(standaloneServerPath)) {
     throw new Error("Standalone server.js was not produced by build:package.");
+  }
+
+  if (!existsSync(publishDir)) {
+    execSync("node scripts/prepare-publish-dir.mjs", {
+      cwd: root,
+      encoding: "utf8",
+      stdio: "pipe",
+    });
   }
 
   const raw = execSync("npm pack --dry-run --json --ignore-scripts .npm-package", {

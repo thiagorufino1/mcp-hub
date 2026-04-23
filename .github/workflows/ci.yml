@@ -25,6 +25,10 @@ jobs:
 
       - run: npm test
 
+      - run: npm run build:package
+
+      - run: node scripts/prepare-publish-dir.mjs
+
       - run: npm run test:smoke
 
       - run: npm run pack:check
