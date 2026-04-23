@@ -28,6 +28,8 @@ jobs:
 
       - run: npm test
 
+      - run: npm run prepare:publish-dir
+
       - run: npm run test:smoke
 
       - run: npm run pack:check
@@ -40,8 +42,6 @@ jobs:
             echo "Tag $GITHUB_REF_NAME does not match package version $PKG_VERSION"
             exit 1
           fi
-
-      - run: npm run prepare:publish-dir
 
       - run: npm publish --access public --provenance ./.npm-package
         env:
