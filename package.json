@@ -7,11 +7,11 @@
   "author": "Thiago Rufino",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thiagorufino1/mcp-hub-ui.git"
+    "url": "git+https://github.com/thiagorufino1/mcp-hub.git"
   },
-  "homepage": "https://github.com/thiagorufino1/mcp-hub-ui#readme",
+  "homepage": "https://github.com/thiagorufino1/mcp-hub#readme",
   "bugs": {
-    "url": "https://github.com/thiagorufino1/mcp-hub-ui/issues"
+    "url": "https://github.com/thiagorufino1/mcp-hub/issues"
   },
   "publishConfig": {
     "access": "public"
