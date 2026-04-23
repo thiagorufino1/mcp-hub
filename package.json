@@ -1,6 +1,6 @@
 {
   "name": "@thiagorufino/mcp-hub",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "description": "Local web UI for testing LLMs, MCP servers, tools, and chat workflows via npx",
   "license": "MIT",
