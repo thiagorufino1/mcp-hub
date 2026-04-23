@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useAppPreferences } from "@/components/providers/app-preferences-provider";
 import { useTheme } from "@/components/providers/theme-provider";
 import { Button } from "@/components/ui/button";
-import { Boxes, Check, Copy, MessageSquarePlus, MoonStar, Settings, Sun } from "@/components/ui/icons";
+import { Boxes, Check, Copy, MessageSquarePlus, MoonStar, RefreshCw, Settings, Sun } from "@/components/ui/icons";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -23,8 +23,20 @@ export function Topbar({
   onCopySession,
 }: Props) {
   const [copiedSession, setCopiedSession] = useState(false);
+  const [resetPending, setResetPending] = useState(false);
   const { locale, setLocale, t } = useAppPreferences();
   const { theme, setTheme } = useTheme();
+
+  function handleReset() {
+    if (!resetPending) {
+      setResetPending(true);
+      window.setTimeout(() => setResetPending(false), 3000);
+      return;
+    }
+    sessionStorage.clear();
+    localStorage.clear();
+    window.location.reload();
+  }
 
   async function handleCopy() {
     if (!onCopySession) return;
@@ -72,6 +84,23 @@ export function Topbar({
               >
                 {copiedSession ? <Check className="size-[13px]" /> : <Copy className="size-[13px]" />}
                 <span className="text-[12px] font-medium">{copiedSession ? t("topbar.sessionCopied") : t("topbar.copySession")}</span>
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "h-7 rounded-full px-2.5 shadow-none",
+                  resetPending
+                    ? "bg-red-500/20 text-red-200 hover:bg-red-500/30 hover:text-red-100"
+                    : "text-white/92 hover:bg-white/[0.08] hover:text-white"
+                )}
+                onClick={handleReset}
+              >
+                <RefreshCw className="size-[13px]" />
+                <span className="text-[12px] font-medium">
+                  {resetPending ? t("topbar.resetConfirm") : t("topbar.reset")}
+                </span>
               </Button>
 
               <a

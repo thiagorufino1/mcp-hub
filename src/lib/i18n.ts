@@ -172,7 +172,9 @@ export type TranslationKey =
   | "error.title"
   | "error.retry"
   // Topbar
-  | "topbar.githubLabel";
+  | "topbar.githubLabel"
+  | "topbar.reset"
+  | "topbar.resetConfirm";
 
 type TranslationTable = Record<TranslationKey, string>;
 
@@ -350,6 +352,8 @@ export const translations: Record<AppLocale, TranslationTable> = {
     "error.retry": "Tentar novamente",
     // Topbar
     "topbar.githubLabel": "Abrir repositório no GitHub",
+    "topbar.reset": "Resetar",
+    "topbar.resetConfirm": "Confirmar reset",
   },
   en: {
     "app.name": "mcp-hub-ui",
@@ -524,6 +528,8 @@ export const translations: Record<AppLocale, TranslationTable> = {
     "error.retry": "Try again",
     // Topbar
     "topbar.githubLabel": "Open repository on GitHub",
+    "topbar.reset": "Reset",
+    "topbar.resetConfirm": "Confirm reset",
   },
 };
 

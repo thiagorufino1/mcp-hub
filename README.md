@@ -6,6 +6,8 @@
 
 **MCP Hub** is a local web UI for testing LLMs and MCP servers. Connect any provider, inspect tool calls, and run multi-turn chats.
 
+![MCP Hub chat interface](docs/mcp-hub.png)
+
 ---
 
 ## Architecture Overview
@@ -129,6 +131,7 @@ Inspect tools, schemas, and execute calls directly from the sidebar.
 - Streaming responses with live token display
 - Multi-turn conversation history
 - System Prompt support
+- Token usage tracking: input, output, and total tokens per message and accumulated per session
 - Tool activity trace: see every MCP tool call and result in real time
 - Chart rendering: ask for charts, get interactive visualizations inline
 - Audio input support
