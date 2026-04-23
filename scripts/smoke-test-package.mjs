@@ -45,6 +45,7 @@ child.stderr.on("data", (chunk) => {
   stderr += chunk.toString();
 });
 
+let success = false;
 try {
   const ready = await waitForReady(baseUrl);
 
@@ -63,16 +64,24 @@ try {
   }
 
   console.log(`Smoke test OK at ${baseUrl}`);
+  success = true;
+} catch (err) {
+  console.error(err);
 } finally {
   if (process.platform === "win32") {
     spawnSync("taskkill", ["/PID", String(child.pid), "/T", "/F"], {
       stdio: "ignore",
     });
   } else {
-    child.kill("SIGTERM");
+    try {
+      process.kill(-child.pid, "SIGKILL");
+    } catch (e) {
+      child.kill("SIGKILL");
+    }
   }
   await new Promise((resolve) => {
     child.once("close", resolve);
-    setTimeout(resolve, 5000);
+    setTimeout(resolve, 2000);
   });
+  process.exit(success ? 0 : 1);
 }
