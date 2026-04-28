@@ -37,6 +37,11 @@ cpSync(join(root, "bin"), join(publishDir, "bin"), { recursive: true });
 cpSync(join(root, ".next", "standalone"), join(publishDir, ".next", "standalone"), {
   recursive: true,
 });
+cpSync(
+  join(root, ".next", "static"),
+  join(publishDir, ".next", "standalone", ".next-package", "static"),
+  { recursive: true },
+);
 cpSync(join(root, "README.md"), join(publishDir, "README.md"));
 cpSync(join(root, "LICENSE"), join(publishDir, "LICENSE"));
 

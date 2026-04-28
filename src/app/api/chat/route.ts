@@ -8,6 +8,7 @@ import { getApprovedTools } from "@/lib/mcp-authorization";
 import { createInspectableServerConfig, inspectMcpServer } from "@/lib/mcp-client";
 import { executeMcpTool } from "@/lib/mcp-client";
 import type { ChatStreamEvent, Message, TokenUsage } from "@/types/chat";
+import type { AppLocale } from "@/lib/i18n";
 import type { LLMConfig } from "@/types/llm-config";
 import type { McpServerConfig } from "@/types/mcp";
 
@@ -47,6 +48,7 @@ const McpServerSchema = z.object({
 
 const ChatRequestBodySchema = z.object({
   customPrompt: z.string().max(8000).optional(),
+  locale: z.enum(["pt-BR", "en"]).optional().default("en"),
   message: z.string().optional(),
   messages: z
     .array(
@@ -382,24 +384,13 @@ function mapUsage(usage: {
 }
 
 function streamMockResponse(body: ChatRequestBody) {
-  const { message, mcpServers = [], requestId } = body;
+  const { locale = "en", message, mcpServers = [], requestId } = body;
   const encoder = new TextEncoder();
   const assistantId = `assistant-${Date.now()}`;
   const userPrompt = message?.trim() || "Empty message";
   const preferredServer = mcpServers[0];
 
-  const responseText = [
-    "### Demo Mode Active",
-    "",
-    `Your message: **"${userPrompt}"**`,
-    "",
-    preferredServer
-      ? `MCP server **${preferredServer.name}** is connected with **${preferredServer.tools.length}** available tools.`
-      : "No MCP server connected yet.",
-    "",
-    "---",
-    "To enable real AI responses, add an LLM provider in the settings sidebar.",
-  ].join("\n");
+  const responseText = buildMockResponseText(locale, userPrompt, preferredServer);
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -427,6 +418,40 @@ function streamMockResponse(body: ChatRequestBody) {
       Connection: "keep-alive",
     },
   });
+}
+
+function buildMockResponseText(
+  locale: AppLocale,
+  userPrompt: string,
+  preferredServer?: Pick<McpServerConfig, "name" | "tools">,
+) {
+  if (locale === "pt-BR") {
+    return [
+      "### Modo Demo Ativo",
+      "",
+      `Sua mensagem: **\"${userPrompt}\"**`,
+      "",
+      preferredServer
+        ? `O servidor MCP **${preferredServer.name}** está conectado com **${preferredServer.tools.length}** ferramentas disponíveis.`
+        : "Nenhum servidor MCP conectado ainda.",
+      "",
+      "---",
+      "Para habilitar respostas reais de IA, adicione um provedor LLM na barra lateral de configurações.",
+    ].join("\n");
+  }
+
+  return [
+    "### Demo Mode Active",
+    "",
+    `Your message: **\"${userPrompt}\"**`,
+    "",
+    preferredServer
+      ? `MCP server **${preferredServer.name}** is connected with **${preferredServer.tools.length}** available tools.`
+      : "No MCP server connected yet.",
+    "",
+    "---",
+    "To enable real AI responses, add an LLM provider in the settings sidebar.",
+  ].join("\n");
 }
 
 function streamSingleEvent(event: ChatStreamEvent, status = 200) {

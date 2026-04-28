@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2026-04-27
+
+### Changed
+- Responsive chat layout refined for desktop scaling scenarios such as Windows 125% / 150% / 175%
+- Sidebar width now scales more smoothly across intermediate desktop breakpoints, with better balance between chat width and control panels
+- Topbar and main chat container now use aligned width constraints for more consistent desktop composition
+- Mobile/tablet settings drawer now uses a stronger overlay and more solid panel background for better readability
+- LLM token usage unavailable state now uses a clearer warning-style visual treatment
+
+### Fixed
+- Demo-mode fallback responses now respect the selected UI language, including Portuguese (`pt-BR`)
+
+---
+
 ## [1.0.6] - 2026-04-23
 
 ### Added

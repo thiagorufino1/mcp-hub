@@ -54,7 +54,7 @@ export function Topbar({
         background: cieloHeaderBackground,
       }}
     >
-      <div className={cn("mx-auto flex h-[52px] w-full max-w-[1480px] items-center justify-between gap-4 px-3 sm:px-4 lg:px-6 transition-all duration-300")}>
+      <div className={cn("mx-auto flex h-[52px] w-full max-w-[1500px] items-center justify-between gap-4 px-3 sm:px-4 lg:px-5 xl:px-6 transition-all duration-300")}>
         <TooltipProvider delayDuration={120}>
           <div className="flex min-w-0 items-center">
             <div className="flex items-center gap-2">
@@ -232,7 +232,7 @@ export function Topbar({
                   aria-label={t("topbar.configureLlm")}
                   variant="ghost"
                   size="icon"
-                  className="size-8 rounded-full bg-white/[0.07] text-white/92 shadow-[0_6px_18px_rgba(8,24,64,0.08)] backdrop-blur-[4px] hover:bg-white/[0.10] hover:text-white xl:hidden"
+                  className="size-8 rounded-full bg-white/[0.07] text-white/92 shadow-[0_6px_18px_rgba(8,24,64,0.08)] backdrop-blur-[4px] hover:bg-white/[0.10] hover:text-white lg:hidden"
                   onClick={onToggleSidebar}
                 >
                   <Settings className="size-4" />

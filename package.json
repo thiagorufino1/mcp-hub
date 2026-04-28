@@ -1,9 +1,9 @@
 {
   "name": "@thiagorufino/mcp-hub",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "private": false,
   "description": "Local web UI for testing LLMs, MCP servers, tools, and chat workflows via npx",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "Thiago Rufino",
   "repository": {
     "type": "git",

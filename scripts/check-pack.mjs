@@ -44,8 +44,8 @@ try {
     });
   }
 
-  const raw = execSync("npm pack --dry-run --json --ignore-scripts .npm-package", {
-    cwd: root,
+  const raw = execSync("npm pack --dry-run --json --ignore-scripts .", {
+    cwd: publishDir,
     encoding: "utf8",
   });
 

@@ -1,8 +1,7 @@
 # MCP Hub
 
-[![npm version](https://img.shields.io/npm/v/@thiagorufino/mcp-hub)](https://www.npmjs.com/package/@thiagorufino/mcp-hub)
-[![npm downloads](https://img.shields.io/npm/dm/@thiagorufino/mcp-hub)](https://www.npmjs.com/package/@thiagorufino/mcp-hub)
-[![license](https://img.shields.io/npm/l/@thiagorufino/mcp-hub)](./LICENSE)
+[![npm version](https://img.shields.io/npm/v/@thiagorufino/mcp-hub?color=blue)](https://www.npmjs.com/package/@thiagorufino/mcp-hub)
+[![npm downloads](https://img.shields.io/npm/dm/@thiagorufino/mcp-hub?color=blue)](https://www.npmjs.com/package/@thiagorufino/mcp-hub)
 
 **MCP Hub** is a local web UI for testing LLMs and MCP servers. Connect any provider, inspect tool calls, and run multi-turn chats.
 
@@ -179,3 +178,7 @@ See [SECURITY.md](./SECURITY.md) for the full security model.
 - GitHub: https://github.com/thiagorufino1/mcp-hub
 - Issues: https://github.com/thiagorufino1/mcp-hub/issues
 - npm: https://www.npmjs.com/package/@thiagorufino/mcp-hub
+
+## License
+
+Apache License 2.0. See [LICENSE](./LICENSE).

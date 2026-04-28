@@ -209,7 +209,14 @@ export function LlmConfigSection({ value, onChange, usageTotals, usageState }: P
             ))}
           </div>
           {usageState === "unavailable" ? (
-            <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-[11px] leading-5 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
+            <div
+              className="mt-2 rounded-lg border px-2.5 py-2 text-[11px] leading-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
+              style={{
+                borderColor: "var(--color-warning)",
+                background: "color-mix(in srgb, var(--color-warning-soft) 100%, var(--color-surface) 0%)",
+                color: "var(--color-warning)",
+              }}
+            >
               {t("sidebar.tokensUnavailable")}
             </div>
           ) : null}

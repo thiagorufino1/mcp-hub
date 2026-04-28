@@ -125,7 +125,7 @@ function normalizeStoredToolEvent(event: Partial<ToolEvent>): ToolEvent | null {
 }
 
 export function ChatShell() {
-  const { t } = useAppPreferences();
+  const { locale, t } = useAppPreferences();
   const [toolEvents, setToolEvents] = useState<ToolEvent[]>([]);
   const [mcpServers, setMcpServers] = useState<McpServerConfig[]>([]);
   const initialAssistantMessage = useMemo(
@@ -671,6 +671,7 @@ export function ChatShell() {
         body: JSON.stringify({
           customPrompt: systemPrompts.find((p) => p.id === activePromptId)?.content || undefined,
           llmConfig: llmConfig ?? undefined,
+          locale,
           mcpServers: resolvedServers.map((server) => ({
             ...server,
             lastCheckedAt: now.toString(),
@@ -1079,10 +1080,10 @@ export function ChatShell() {
           onCopySession={handleCopySession}
         />
         <div
-          className="mx-auto flex min-h-0 w-full max-w-[1380px] justify-center gap-8 px-6 pb-4 pt-4 relative transition-all duration-300"
+          className="relative mx-auto flex min-h-0 w-full max-w-[1500px] justify-center gap-4 px-3 pb-4 pt-4 transition-all duration-300 lg:gap-5 lg:px-4 xl:gap-6 xl:px-5 2xl:gap-8 2xl:px-6"
           style={{ height: "calc(100dvh - 52px)" }}
         >
-          <aside className="hidden w-[340px] shrink-0 xl:block">
+          <aside className="hidden w-[clamp(290px,24vw,340px)] shrink-0 lg:block xl:w-[clamp(300px,24vw,360px)]">
             <SidebarTools
               {...promptProps}
               {...llmProps}
@@ -1102,7 +1103,7 @@ export function ChatShell() {
               servers={mcpServers}
             />
           </aside>
-          <div className="flex h-full min-h-0 flex-1 max-w-[920px] flex-col overflow-hidden">
+          <div className="flex h-full min-h-0 min-w-0 flex-1 max-w-[760px] flex-col overflow-hidden lg:max-w-none">
             <main className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
               <ChatThread
                 isStreaming={isStreaming}

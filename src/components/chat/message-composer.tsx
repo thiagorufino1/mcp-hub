@@ -46,7 +46,7 @@ export function MessageComposer({ isSubmitting, onStop, onSubmit }: Props) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[980px]">
+    <div className="mx-auto w-full max-w-[980px] lg:max-w-[min(100%,1000px)] xl:max-w-[min(100%,1040px)] 2xl:max-w-[1080px]">
       <form
         className="flex w-full items-center gap-3 rounded-[26px] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
         onSubmit={(event) => void handleSubmit(event)}

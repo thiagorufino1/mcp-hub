@@ -89,13 +89,13 @@ export function SidebarDrawer({
     <div className="fixed inset-0 z-50">
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-[#10264f]/10"
+        className="absolute inset-0 bg-slate-950/30 backdrop-blur-[2px] dark:bg-black/55"
         onClick={onClose}
       />
       <div
         aria-labelledby={titleId}
         aria-modal="true"
-        className="app-scroll absolute right-0 top-0 h-full w-[360px] max-w-[92vw] overflow-y-auto overscroll-contain border-l border-border bg-card shadow-[0_24px_80px_rgba(16,38,79,0.18)]"
+        className="app-scroll absolute right-0 top-0 h-full w-[360px] max-w-[92vw] overflow-y-auto overscroll-contain border-l border-border bg-[color-mix(in_srgb,var(--color-surface)_96%,white_4%)] shadow-[0_24px_80px_rgba(16,38,79,0.22)] backdrop-blur-xl dark:bg-[color-mix(in_srgb,var(--color-surface)_94%,black_6%)] dark:shadow-[0_24px_90px_rgba(0,0,0,0.48)]"
         role="dialog"
       >
         <div className="px-5 py-6">

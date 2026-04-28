@@ -74,7 +74,7 @@ export function ChatThread({ isStreaming, items, onFeedback, scrollRequest = 0 }
   return (
     <div className="app-scroll min-h-0 flex-1 overflow-y-auto" ref={containerRef}>
       <div className="flex min-h-full w-full flex-col px-4 pb-8 pt-6 sm:px-10 sm:pt-8">
-        <div className="mx-auto w-full max-w-[860px] space-y-4 sm:space-y-5">
+        <div className="mx-auto w-full max-w-[860px] space-y-4 sm:space-y-5 lg:max-w-[min(100%,940px)] xl:max-w-[min(100%,980px)] 2xl:max-w-[1020px]">
           {items.map((item) =>
             item.type === "message" ? (
               <MessageBubble key={item.id} message={item.value} onFeedback={onFeedback} />
