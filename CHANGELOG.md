@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.8] - 2026-04-27
+
+### Changed
+- npm package metadata refined with a clearer description focused on local LLM and MCP server testing
+- npm keywords updated to improve package discoverability around MCP, tool calling, and chat UI workflows
+- README branding and introductory copy aligned with the published package metadata
+
+---
+
 ## [1.0.7] - 2026-04-27
 
 ### Changed

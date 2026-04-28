@@ -1,8 +1,8 @@
 {
   "name": "@thiagorufino/mcp-hub",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "private": false,
-  "description": "Local web UI for testing LLMs, MCP servers, tools, and chat workflows via npx",
+  "description": "MCP Hub is a local web UI for testing LLMs and MCP servers. Connect providers, inspect tool calls, and run multi-turn chats in one place.",
   "license": "Apache-2.0",
   "author": "Thiago Rufino",
   "repository": {
@@ -41,16 +41,19 @@
   },
   "keywords": [
     "mcp",
-    "llm",
-    "chat",
-    "local",
-    "ui",
+    "mcp-server",
+    "mcp-client",
+    "mcp-hub",
     "model-context-protocol",
     "ai",
-    "tools",
-    "inspector",
-    "hub",
-    "portal"
+    "llm",
+    "llm-ui",
+    "chat-ui",
+    "ai-tools",
+    "tool-calling",
+    "tool-inspection",
+    "multi-turn-chat",
+    "prompt-testing"
   ],
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^4.0.96",

@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@thiagorufino/mcp-hub?color=blue)](https://www.npmjs.com/package/@thiagorufino/mcp-hub)
 [![npm downloads](https://img.shields.io/npm/dm/@thiagorufino/mcp-hub?color=blue)](https://www.npmjs.com/package/@thiagorufino/mcp-hub)
 
-**MCP Hub** is a local web UI for testing LLMs and MCP servers. Connect any provider, inspect tool calls, and run multi-turn chats.
+**MCP Hub** is a local web UI for testing LLMs and MCP servers. Connect providers, inspect tool calls, and run multi-turn chats in one place.
 
 ![MCP Hub chat interface](docs/mcp-hub.png)
 
@@ -32,7 +32,7 @@
 └────────────────────┘  └──────────────────────┘
 ```
 
-MCP HUB consists of two components that work together:
+MCP Hub consists of two components that work together:
 
 **MCP Hub Server**: A Next.js standalone server that runs locally via `npx`. It acts as the bridge between the browser and external services, spawning MCP stdio processes, connecting to remote MCP servers over SSE or Streamable HTTP, and forwarding LLM requests to the configured provider.
 
