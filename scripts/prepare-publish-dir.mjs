@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
@@ -6,6 +6,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 const publishDir = join(root, ".npm-package");
 const sourcePackage = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+const staticSource = existsSync(join(root, ".next-package", "static"))
+  ? join(root, ".next-package", "static")
+  : join(root, ".next", "static");
 
 const runtimePackage = {
   name: sourcePackage.name,
@@ -38,7 +41,7 @@ cpSync(join(root, ".next", "standalone"), join(publishDir, ".next", "standalone"
   recursive: true,
 });
 cpSync(
-  join(root, ".next", "static"),
+  staticSource,
   join(publishDir, ".next", "standalone", ".next-package", "static"),
   { recursive: true },
 );
