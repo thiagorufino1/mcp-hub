@@ -4,6 +4,7 @@ import type { McpInspectResponse, McpServerConfig } from "@/types/mcp";
 import { z } from "zod";
 
 const ServerPayloadSchema = z.object({
+  authMode: z.enum(["none", "oauth"]).optional().default("none"),
   approvalMode: z.enum(["always", "never", "selected"]).optional().default("never"),
   approvedToolNames: z.array(z.string()).optional().default([]),
   args: z.array(z.string()).optional().default([]),
@@ -14,6 +15,22 @@ const ServerPayloadSchema = z.object({
   headers: z.record(z.string(), z.string()).optional().default({}),
   id: z.string().min(1),
   name: z.string().trim().min(1, "MCP server name is required."),
+  oauth: z
+    .object({
+      accessToken: z.string().optional(),
+      authorizationServerUrl: z.string().trim().url().optional(),
+      clientId: z.string().trim().optional(),
+      clientName: z.string().trim().optional(),
+      clientSecret: z.string().trim().optional(),
+      expiresAt: z.string().trim().optional(),
+      refreshToken: z.string().trim().optional(),
+      redirectUri: z.string().trim().url().optional(),
+      resourceUrl: z.string().trim().url().optional(),
+      scope: z.string().trim().optional(),
+      tokenEndpoint: z.string().trim().url().optional(),
+      tokenType: z.string().trim().optional(),
+    })
+    .optional(),
   transport: z.enum(["stdio", "sse", "streamable-http"]),
   url: z.string().trim().optional(),
 }).refine(data => {

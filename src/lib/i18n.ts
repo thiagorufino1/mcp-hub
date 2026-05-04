@@ -141,6 +141,13 @@ export type TranslationKey =
   | "mcp.addEnv"
   | "mcp.headers"
   | "mcp.addHeader"
+  | "mcp.customHeaders"
+  | "mcp.customHeadersHint"
+  | "mcp.authentication"
+  | "mcp.authenticationHint"
+  | "mcp.appName"
+  | "mcp.clientIdPlaceholder"
+  | "mcp.scopePlaceholder"
   | "mcp.validating"
   | "mcp.sseUrlLabel"
   | "mcp.errorName"
@@ -320,6 +327,13 @@ export const translations: Record<AppLocale, TranslationTable> = {
     "mcp.addEnv": "Adicionar variável de ambiente",
     "mcp.headers": "Cabeçalhos HTTP",
     "mcp.addHeader": "Adicionar cabeçalho",
+    "mcp.customHeaders": "Cabeçalhos personalizados",
+    "mcp.customHeadersHint": "Cabeçalhos opcionais enviados com requisições MCP remotas.",
+    "mcp.authentication": "Autenticação",
+    "mcp.authenticationHint": "Autenticação no navegador quando o servidor exigir.",
+    "mcp.appName": "Nome do app",
+    "mcp.clientIdPlaceholder": "opcional, para clientes pré-registrados",
+    "mcp.scopePlaceholder": "opcional, separado por espaço",
     "mcp.validating": "Validando MCP…",
     "mcp.sseUrlLabel": "URL do Endpoint SSE",
     "mcp.errorName": "Defina um nome para o MCP.",
@@ -496,6 +510,13 @@ export const translations: Record<AppLocale, TranslationTable> = {
     "mcp.addEnv": "Add environment variable",
     "mcp.headers": "HTTP Headers",
     "mcp.addHeader": "Add header",
+    "mcp.customHeaders": "Custom Headers",
+    "mcp.customHeadersHint": "Optional headers sent with remote MCP requests.",
+    "mcp.authentication": "Authentication",
+    "mcp.authenticationHint": "Browser-based auth when the server requires it.",
+    "mcp.appName": "App name",
+    "mcp.clientIdPlaceholder": "optional, for pre-registered clients",
+    "mcp.scopePlaceholder": "optional, space-separated",
     "mcp.validating": "Validating MCP…",
     "mcp.sseUrlLabel": "SSE Endpoint URL",
     "mcp.errorName": "Set a name for the MCP.",

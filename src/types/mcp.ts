@@ -4,6 +4,23 @@ export type McpConnectionStatus = "pending" | "connected" | "error";
 
 export type McpApprovalMode = "always" | "never" | "selected";
 
+export type McpAuthMode = "none" | "oauth";
+
+export type McpOAuthConfig = {
+  accessToken?: string;
+  authorizationServerUrl?: string;
+  clientId?: string;
+  clientName?: string;
+  clientSecret?: string;
+  expiresAt?: string;
+  refreshToken?: string;
+  redirectUri?: string;
+  resourceUrl?: string;
+  scope?: string;
+  tokenEndpoint?: string;
+  tokenType?: string;
+};
+
 export type McpDiscoveredTool = {
   name: string;
   description?: string;
@@ -21,12 +38,14 @@ export type McpServerConfig = {
   name: string;
   enabled: boolean;
   description?: string;
+  authMode?: McpAuthMode;
   transport: McpTransport;
   command?: string;
   args: string[];
   url?: string;
   env: Record<string, string>;
   headers?: Record<string, string>;
+  oauth?: McpOAuthConfig;
   tools: McpDiscoveredTool[];
   connectionStatus: McpConnectionStatus;
   errorMessage?: string;

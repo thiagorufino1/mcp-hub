@@ -36,6 +36,8 @@ function MarkdownContentComponent({ content }: { content: string }) {
 }
 
 function MarkdownSegment({ content }: { content: string }) {
+  const normalizedContent = normalizeLoosePipeTables(content);
+
   return (
     <ReactMarkdown
       components={{
@@ -43,6 +45,23 @@ function MarkdownSegment({ content }: { content: string }) {
           <a href={href} rel="noopener noreferrer" target={href?.startsWith("http") ? "_blank" : undefined}>
             {children}
           </a>
+        ),
+        table: ({ children }) => (
+          <div className="my-4 max-w-full overflow-x-auto app-scroll">
+            <table className="min-w-max border-collapse rounded-2xl border border-[var(--color-border)] text-left">
+              {children}
+            </table>
+          </div>
+        ),
+        th: ({ children }) => (
+          <th className="whitespace-nowrap border-b border-[var(--color-border)] bg-[hsl(var(--muted))] px-3 py-2 text-[11px] font-semibold text-foreground">
+            {children}
+          </th>
+        ),
+        td: ({ children }) => (
+          <td className="whitespace-nowrap border-b border-[var(--color-border)] px-3 py-2 text-[12px] text-foreground">
+            {children}
+          </td>
         ),
         p: ({ children }) => {
           const childArray = toNodeArray(children);
@@ -59,9 +78,51 @@ function MarkdownSegment({ content }: { content: string }) {
       rehypePlugins={[rehypeSanitize, rehypeHighlight]}
       remarkPlugins={[remarkGfm]}
     >
-      {content}
+      {normalizedContent}
     </ReactMarkdown>
   );
+}
+
+function normalizeLoosePipeTables(content: string) {
+  const lines = content.split("\n");
+  const normalized: string[] = [];
+  let buffer: string[] = [];
+
+  function flushBuffer() {
+    if (buffer.length === 0) {
+      return;
+    }
+
+    const tableLikeLines = buffer.filter((line) => line.includes("|"));
+    const hasManyColumns = tableLikeLines.some((line) => line.split("|").filter(Boolean).length >= 3);
+    const hasHeaderAndSeparator = buffer.some((line) => /^(\s*\|?.+\|.+\|?\s*)$/.test(line)) &&
+      buffer.some((line) => /^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*:?-{3,}:?\s*\|?\s*$/.test(line));
+
+    if (hasManyColumns && !hasHeaderAndSeparator && buffer.length >= 2) {
+      const header = buffer[0]?.trim();
+      const separator = `|${header?.split("|").filter(Boolean).map(() => " --- ").join("|") }|`;
+      normalized.push(header);
+      normalized.push(separator);
+      normalized.push(...buffer.slice(1));
+    } else {
+      normalized.push(...buffer);
+    }
+
+    buffer = [];
+  }
+
+  for (const line of lines) {
+    if (line.includes("|")) {
+      buffer.push(line);
+      continue;
+    }
+
+    flushBuffer();
+    normalized.push(line);
+  }
+
+  flushBuffer();
+  return normalized.join("\n");
 }
 
 function splitChartBlocks(content: string): ContentSegment[] {

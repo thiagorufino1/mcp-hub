@@ -19,6 +19,13 @@ import {
 } from "@/lib/client-storage";
 import { cn } from "@/lib/utils";
 import { parseStreamChunks } from "@/lib/chat-stream";
+import {
+  clearPendingMcpOAuth,
+  readPendingMcpOAuth,
+  savePendingMcpOAuth,
+  waitForMcpOAuthCallback,
+} from "@/lib/mcp-oauth-browser";
+import type { PendingMcpOAuth } from "@/lib/mcp-oauth-browser";
 import type { ChatStreamEvent, Message, ToolEvent } from "@/types/chat";
 import type { McpInspectResponse, McpServerConfig } from "@/types/mcp";
 import type { LLMConfig } from "@/types/llm-config";
@@ -68,6 +75,7 @@ function normalizeStoredServer(server: Partial<McpServerConfig>): McpServerConfi
   }
 
   return {
+    authMode: server.authMode ?? "none",
     approvalMode: server.approvalMode ?? "never",
     approvedToolNames: Array.isArray(server.approvedToolNames) ? server.approvedToolNames : [],
     args: Array.isArray(server.args) ? server.args : [],
@@ -81,6 +89,7 @@ function normalizeStoredServer(server: Partial<McpServerConfig>): McpServerConfi
     id: server.id,
     lastCheckedAt: server.lastCheckedAt,
     name: server.name,
+    oauth: server.oauth,
     tools: Array.isArray(server.tools) ? server.tools : [],
     transport: server.transport,
     url: server.url,
@@ -545,7 +554,12 @@ export function ChatShell() {
   }
 
   async function handleSaveServer(server: McpServerConfig) {
-    const result = await inspectServer(server);
+    const preparedServer =
+      server.authMode === "oauth" && !server.oauth?.accessToken
+        ? await completeMcpOAuth(server)
+        : server;
+
+    const result = await inspectServer(preparedServer);
     if (!result.ok) {
       throw new Error(result.server.errorMessage ?? t("chat.mcpConnectFailed"));
     }
@@ -561,6 +575,123 @@ export function ChatShell() {
     });
 
     setEditingServerId(null);
+  }
+
+  async function completeMcpOAuth(server: McpServerConfig) {
+    if (server.transport === "stdio") {
+      return server;
+    }
+
+    const redirectUri = new URL("/oauth/callback", window.location.origin).toString();
+    const response = await fetch("/api/mcp/oauth/start", {
+      body: JSON.stringify({
+        clientName: server.oauth?.clientName?.trim() || "MCP Hub",
+        clientId: server.oauth?.clientId?.trim() || undefined,
+        clientUri: window.location.origin,
+        redirectUri,
+        resourceUrl: server.url ?? "",
+        scope: server.oauth?.scope?.trim() || undefined,
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+
+    const payload = (await response.json()) as
+      | {
+          authorizationServerUrl: string;
+          authorizationUrl: string;
+          clientId: string;
+          clientSecret?: string;
+          codeVerifier: string;
+          redirectUri: string;
+          resourceUrl: string;
+          scope?: string;
+          state: string;
+          tokenEndpoint: string;
+        }
+      | { error?: string };
+
+    if (!response.ok || !("authorizationUrl" in payload)) {
+      throw new Error("error" in payload ? payload.error ?? t("chat.mcpConnectFailed") : t("chat.mcpConnectFailed"));
+    }
+
+    const pending: PendingMcpOAuth = {
+      authorizationServerUrl: payload.authorizationServerUrl,
+      clientId: payload.clientId,
+      clientName: server.oauth?.clientName?.trim() || "MCP Hub",
+      clientSecret: payload.clientSecret,
+      codeVerifier: payload.codeVerifier,
+      redirectUri: payload.redirectUri,
+      resourceUrl: payload.resourceUrl,
+      scope: payload.scope,
+      state: payload.state,
+      tokenEndpoint: payload.tokenEndpoint,
+    };
+
+    savePendingMcpOAuth(pending);
+
+    try {
+      const callback = await waitForMcpOAuthCallback(payload.state, payload.authorizationUrl);
+
+      if (callback.error) {
+        throw new Error(callback.errorDescription || callback.error);
+      }
+
+      if (!callback.code) {
+        throw new Error("OAuth callback missing authorization code.");
+      }
+
+      const stored = readPendingMcpOAuth(payload.state);
+      if (!stored) {
+        throw new Error("OAuth session expired.");
+      }
+
+      const exchangeResponse = await fetch("/api/mcp/oauth/exchange", {
+        body: JSON.stringify({
+          clientId: stored.clientId,
+          clientSecret: stored.clientSecret,
+          code: callback.code,
+          codeVerifier: stored.codeVerifier,
+          redirectUri: stored.redirectUri,
+          state: stored.state,
+          tokenEndpoint: stored.tokenEndpoint,
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+
+      const exchangePayload = (await exchangeResponse.json()) as
+        | {
+            oauth: {
+              accessToken: string;
+              clientId: string;
+              clientSecret?: string;
+              expiresAt?: string;
+              redirectUri: string;
+              refreshToken?: string;
+              scope?: string;
+              tokenEndpoint: string;
+              tokenType?: string;
+            };
+          }
+        | { error?: string };
+
+      if (!exchangeResponse.ok || !("oauth" in exchangePayload)) {
+        throw new Error(
+          "error" in exchangePayload ? exchangePayload.error ?? t("chat.mcpConnectFailed") : t("chat.mcpConnectFailed"),
+        );
+      }
+
+      return {
+        ...server,
+        oauth: {
+          ...server.oauth,
+          ...exchangePayload.oauth,
+        },
+      };
+    } finally {
+      clearPendingMcpOAuth(payload.state);
+    }
   }
 
   async function handleRetestServer(serverId: string) {

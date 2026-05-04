@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9] - 2026-05-04
+
+### Added
+- OAuth support for remote MCP servers over HTTP transports
+- MCP OAuth discovery that follows protected-resource metadata, authorization-server metadata, and path-based discovery variants
+- Automatic OAuth token refresh and single-retry handling for expired remote MCP sessions
+
+### Changed
+- MCP server dialog now separates custom headers from authentication options
+- OAuth-related UI copy now stays language-aware and provider-neutral
+- Wide Markdown tables now render with horizontal scrolling instead of breaking the chat layout
+
+### Fixed
+- OAuth callback flow now works with popup-based auth handoff
+- Local session storage remains the only persistence layer for sensitive browser-side config
+
 ## [1.0.8] - 2026-04-27
 
 ### Changed

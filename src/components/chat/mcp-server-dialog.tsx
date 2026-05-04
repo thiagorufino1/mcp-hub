@@ -30,12 +30,13 @@ type KVItem = { id: string; key: string; value: string };
 
 function createDraft(server?: McpServerConfig | null) {
   return {
-
+    authMode: server?.authMode ?? "none",
     args: (server?.args ?? []).map((v) => ({ id: crypto.randomUUID(), value: v })),
     approvedToolNames: server?.approvedToolNames ?? [],
     command: server?.command ?? "",
     env: Object.entries(server?.env ?? {}).map(([k, v]) => ({ id: crypto.randomUUID(), key: k, value: v })),
     headers: Object.entries(server?.headers ?? {}).map(([k, v]) => ({ id: crypto.randomUUID(), key: k, value: v })),
+    oauth: server?.oauth,
     name: server?.name ?? "",
     transport: server?.transport ?? ("streamable-http" satisfies McpTransport),
     url: server?.url ?? "",
@@ -48,11 +49,15 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
   const [draft] = useState(() => createDraft(initialServer));
   const [name, setName] = useState(draft.name);
   const [transport, setTransport] = useState<McpTransport>(draft.transport);
+  const [authMode, setAuthMode] = useState(draft.authMode);
   const [command, setCommand] = useState(draft.command);
   const [args, setArgs] = useState<ArgItem[]>(draft.args);
   const [url, setUrl] = useState(draft.url);
   const [envItems, setEnvItems] = useState<KVItem[]>(draft.env);
   const [headerItems, setHeaderItems] = useState<KVItem[]>(draft.headers);
+  const [clientName, setClientName] = useState(draft.oauth?.clientName ?? "MCP Hub");
+  const [clientId, setClientId] = useState(draft.oauth?.clientId ?? "");
+  const [scope, setScope] = useState(draft.oauth?.scope ?? "");
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -113,9 +118,11 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
       if (k) acc[k] = item.value.trim();
       return acc;
     }, {} as Record<string, string>);
+    const safeScope = scope.trim() || undefined;
 
     try {
       await onSave({
+        authMode: transport === "stdio" ? "none" : authMode,
         args: safeArgs,
         approvalMode: "always",
         approvedToolNames: [],
@@ -128,6 +135,17 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
         id: initialServer?.id ?? `mcp-${crypto.randomUUID()}`,
         lastCheckedAt: initialServer?.lastCheckedAt,
         name: trimmedName,
+        oauth:
+          transport === "stdio"
+            ? undefined
+            : authMode === "oauth"
+              ? {
+                  ...initialServer?.oauth,
+                  clientId: clientId.trim() || initialServer?.oauth?.clientId,
+                  clientName: clientName.trim() || "MCP Hub",
+                  scope: safeScope,
+                }
+              : undefined,
         tools: initialServer?.tools ?? [],
         transport,
         url: transport === "stdio" ? undefined : trimmedUrl,
@@ -309,8 +327,15 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
                 />
               </div>
 
-              <div className="space-y-2 pt-2 border-t border-[#dbe4f1]">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("mcp.headers")}</Label>
+              <div className="space-y-3 rounded-2xl border border-[#dbe4f1] bg-[var(--color-surface)] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="text-sm font-semibold text-foreground">{t("mcp.customHeaders")}</div>
+                    <p className="text-[12px] text-[var(--color-text-secondary)]">
+                      {t("mcp.customHeadersHint")}
+                    </p>
+                  </div>
+                </div>
                 <div className="space-y-2">
                   {headerItems.map((item, index) => (
                     <div key={item.id} className="flex flex-col sm:flex-row items-center gap-2">
@@ -353,6 +378,79 @@ export function McpServerDialog({ initialServer, isOpen, onClose, onSave }: Prop
                     <Plus className="mr-1 size-3.5" /> {t("mcp.addHeader")}
                   </Button>
                 </div>
+              </div>
+
+              <div className="space-y-3 rounded-2xl border border-[#dbe4f1] bg-[var(--color-surface)] p-4">
+                <div className="space-y-1">
+                  <div className="text-sm font-semibold text-foreground">{t("mcp.authentication")}</div>
+                  <p className="text-[12px] text-[var(--color-text-secondary)]">
+                    {t("mcp.authenticationHint")}
+                  </p>
+                </div>
+                <div className="flex rounded-2xl border border-[#dbe4f1] bg-[var(--color-surface-muted)] p-1 gap-1">
+                  {[
+                    { value: "none", label: "None" },
+                    { value: "oauth", label: "OAuth" },
+                  ].map((option) => {
+                    const selected = authMode === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        className={cn(
+                          "flex-1 rounded-xl px-3 py-1.5 text-center text-sm transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                          selected
+                            ? "bg-[var(--color-surface)] shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
+                            : "hover:bg-[var(--color-surface)]/60",
+                        )}
+                        onClick={() => setAuthMode(option.value as "none" | "oauth")}
+                        type="button"
+                      >
+                        <span className={cn("block font-semibold", selected ? "text-foreground" : "text-muted-foreground")}>
+                          {option.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {authMode === "oauth" ? (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="mcp-client-name" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        {t("mcp.appName")}
+                      </Label>
+                      <Input
+                        id="mcp-client-name"
+                        value={clientName}
+                        onChange={(event) => setClientName(event.target.value)}
+                        className="h-10 text-[13px] rounded-xl border-[#dbe4f1] bg-[var(--color-surface-muted)] shadow-[0_1px_4px_rgba(15,23,42,0.04)] focus-visible:border-[var(--color-primary)] focus-visible:ring-0"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="mcp-client-id" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Client ID
+                      </Label>
+                      <Input
+                        id="mcp-client-id"
+                        value={clientId}
+                        onChange={(event) => setClientId(event.target.value)}
+                        placeholder={t("mcp.clientIdPlaceholder")}
+                        className="h-10 text-[13px] rounded-xl border-[#dbe4f1] bg-[var(--color-surface-muted)] shadow-[0_1px_4px_rgba(15,23,42,0.04)] focus-visible:border-[var(--color-primary)] focus-visible:ring-0"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="mcp-scope" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Scope
+                      </Label>
+                      <Input
+                        id="mcp-scope"
+                        value={scope}
+                        onChange={(event) => setScope(event.target.value)}
+                        placeholder={t("mcp.scopePlaceholder")}
+                        className="h-10 text-[13px] rounded-xl border-[#dbe4f1] bg-[var(--color-surface-muted)] shadow-[0_1px_4px_rgba(15,23,42,0.04)] focus-visible:border-[var(--color-primary)] focus-visible:ring-0"
+                      />
+                    </div>
+                  </>
+                ) : null}
               </div>
             </>
           )}

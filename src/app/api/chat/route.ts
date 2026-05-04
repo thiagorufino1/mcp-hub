@@ -15,6 +15,7 @@ import type { McpServerConfig } from "@/types/mcp";
 const MCP_CHAT_SERVER_CACHE_TTL_MS = 12000;
 
 const McpServerSchema = z.object({
+  authMode: z.enum(["none", "oauth"]).optional().default("none"),
   approvalMode: z.enum(["always", "never", "selected"]).optional().default("never"),
   approvedToolNames: z.array(z.string()).optional().default([]),
   args: z.array(z.string()).optional().default([]),
@@ -27,6 +28,22 @@ const McpServerSchema = z.object({
   id: z.string().min(1),
   lastCheckedAt: z.string().optional(),
   name: z.string().trim().min(1),
+  oauth: z
+    .object({
+      accessToken: z.string().optional(),
+      authorizationServerUrl: z.string().trim().url().optional(),
+      clientId: z.string().trim().optional(),
+      clientName: z.string().trim().optional(),
+      clientSecret: z.string().trim().optional(),
+      expiresAt: z.string().trim().optional(),
+      refreshToken: z.string().trim().optional(),
+      redirectUri: z.string().trim().url().optional(),
+      resourceUrl: z.string().trim().url().optional(),
+      scope: z.string().trim().optional(),
+      tokenEndpoint: z.string().trim().url().optional(),
+      tokenType: z.string().trim().optional(),
+    })
+    .optional(),
   tools: z.array(z.any()).optional().default([]),
   transport: z.enum(["stdio", "sse", "streamable-http"]),
   url: z.string().trim().optional(),

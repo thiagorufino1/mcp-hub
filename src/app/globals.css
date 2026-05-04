@@ -231,7 +231,8 @@ textarea {
 }
 
 .markdown-body table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   border: 1px solid hsl(var(--border));
   border-radius: 12px;
@@ -243,6 +244,7 @@ textarea {
   border-bottom: 1px solid hsl(var(--border));
   padding: 0.68rem 0.82rem;
   text-align: left;
+  white-space: nowrap;
 }
 
 .markdown-body th {

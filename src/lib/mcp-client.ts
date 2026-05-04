@@ -7,6 +7,7 @@ import {
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 
 import { isToolExecutionAllowed } from "@/lib/mcp-authorization";
+import { isOAuthTokenExpired, refreshMcpOAuthToken } from "@/lib/mcp-oauth";
 import type {
   McpDiscoveredTool,
   McpInspectResponse,
@@ -34,14 +35,71 @@ function parseCommand(command: string, args: string[]) {
 }
 
 function buildHeaders(server: McpServerConfig) {
-  return Object.keys(server.headers ?? {}).length > 0 ? server.headers : undefined;
+  const headers = { ...(server.headers ?? {}) };
+  const accessToken = server.oauth?.accessToken?.trim();
+
+  if (server.authMode === "oauth" && accessToken) {
+    headers.Authorization = `${server.oauth?.tokenType?.trim() || "Bearer"} ${accessToken}`;
+  }
+
+  return Object.keys(headers).length > 0 ? headers : undefined;
 }
 
-function buildTransport(server: McpServerConfig) {
+function isAuthFailure(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("401") ||
+    message.includes("unauthorized") ||
+    message.includes("invalid_token") ||
+    message.includes("token expired") ||
+    message.includes("expired token")
+  );
+}
+
+async function resolveOAuthConfig(server: McpServerConfig) {
+  if (server.authMode !== "oauth" || !server.oauth) {
+    return server.oauth;
+  }
+
+  if (!isOAuthTokenExpired(server.oauth)) {
+    return server.oauth;
+  }
+
+  return (await refreshMcpOAuthToken(server.oauth)) ?? server.oauth;
+}
+
+async function maybeRefreshOAuth(server: McpServerConfig, force = false) {
+  if (server.authMode !== "oauth" || !server.oauth) {
+    return server;
+  }
+
+  const refreshed = force
+    ? await refreshMcpOAuthToken(server.oauth)
+    : await resolveOAuthConfig(server);
+  if (!refreshed) {
+    return server;
+  }
+
+  return {
+    ...server,
+    oauth: refreshed,
+  };
+}
+
+async function buildTransport(server: McpServerConfig) {
+  const oauth = await resolveOAuthConfig(server);
+  const resolvedServer = oauth ? { ...server, oauth } : server;
+
   switch (server.transport) {
     case "stdio": {
       const parsed = parseCommand(server.command ?? "", server.args);
-      return new StdioClientTransport({
+      return {
+        server: resolvedServer,
+        transport: new StdioClientTransport({
         args: parsed.args,
         command: parsed.command,
         env: {
@@ -49,20 +107,27 @@ function buildTransport(server: McpServerConfig) {
           ...server.env,
         },
         stderr: "pipe",
-      });
+        }),
+      };
     }
     case "sse":
-      return new SSEClientTransport(new URL(server.url ?? ""), {
+      return {
+        server: resolvedServer,
+        transport: new SSEClientTransport(new URL(server.url ?? ""), {
         requestInit: {
-          headers: buildHeaders(server),
+          headers: buildHeaders(resolvedServer),
         },
-      });
+        }),
+      };
     default:
-      return new StreamableHTTPClientTransport(new URL(server.url ?? ""), {
+      return {
+        server: resolvedServer,
+        transport: new StreamableHTTPClientTransport(new URL(server.url ?? ""), {
         requestInit: {
-          headers: buildHeaders(server),
+          headers: buildHeaders(resolvedServer),
         },
-      });
+        }),
+      };
   }
 }
 
@@ -76,15 +141,56 @@ async function createConnectedClient(server: McpServerConfig) {
       capabilities: {},
     },
   );
-  const transport = buildTransport(server);
+  const connection = await buildTransport(server);
+  const transport = connection.transport;
+  const resolvedServer = connection.server;
   await client.connect(transport);
 
   return {
     client,
+    server: resolvedServer,
     async close() {
       await transport.close().catch(() => undefined);
     },
   };
+}
+
+async function withOAuthRetry<T>(
+  server: McpServerConfig,
+  action: (resolvedServer: McpServerConfig) => Promise<T>,
+): Promise<{ result: T; server: McpServerConfig }> {
+  const resolvedServer = await maybeRefreshOAuth(server);
+
+  try {
+    return {
+      result: await action(resolvedServer),
+      server: resolvedServer,
+    };
+  } catch (error) {
+    if (!isAuthFailure(error) || resolvedServer.authMode !== "oauth" || !resolvedServer.oauth) {
+      throw error;
+    }
+
+    const refreshedServer = await maybeRefreshOAuth({
+      ...resolvedServer,
+      oauth: {
+        ...resolvedServer.oauth,
+        expiresAt: undefined,
+      },
+    }, true);
+
+    if (
+      refreshedServer.oauth?.accessToken === resolvedServer.oauth.accessToken &&
+      refreshedServer.oauth?.refreshToken === resolvedServer.oauth.refreshToken
+    ) {
+      throw error;
+    }
+
+    return {
+      result: await action(refreshedServer),
+      server: refreshedServer,
+    };
+  }
 }
 
 export function createInspectableServerConfig(server: MutableMcpServer): McpServerConfig {
@@ -99,6 +205,8 @@ export function createInspectableServerConfig(server: MutableMcpServer): McpServ
     env: server.env,
     errorMessage: server.errorMessage,
     headers: server.headers,
+    authMode: server.authMode,
+    oauth: server.oauth,
     id: server.id,
     lastCheckedAt: server.lastCheckedAt,
     name: server.name,
@@ -109,33 +217,35 @@ export function createInspectableServerConfig(server: MutableMcpServer): McpServ
 }
 
 export async function inspectMcpServer(server: McpServerConfig): Promise<McpInspectResponse> {
-  let close: (() => Promise<void>) | null = null;
-
   try {
-    const connection = await createConnectedClient(server);
-    const client = connection.client;
-    close = connection.close;
+    const { result, server: resolvedServer } = await withOAuthRetry(server, async (resolved) => {
+      const connection = await createConnectedClient(resolved);
+      try {
+        const toolsResult = await connection.client.listTools();
 
-    const toolsResult = await client.listTools();
-
-    const tools: McpDiscoveredTool[] = toolsResult.tools.map((tool) => ({
-      description: tool.description,
-      inputSchema:
-        tool.inputSchema && typeof tool.inputSchema === "object"
-          ? {
-              type: "object",
-              properties: tool.inputSchema.properties,
-              required: tool.inputSchema.required,
-            }
-          : undefined,
-      name: tool.name,
-      readOnly: tool.annotations?.readOnlyHint ?? false,
-      isDestructive: tool.annotations?.destructiveHint === true,
-    }));
+        return toolsResult.tools.map((tool) => ({
+          description: tool.description,
+          inputSchema:
+            tool.inputSchema && typeof tool.inputSchema === "object"
+              ? {
+                  type: "object" as const,
+                  properties: tool.inputSchema.properties,
+                  required: tool.inputSchema.required,
+                }
+              : undefined,
+          name: tool.name,
+          readOnly: tool.annotations?.readOnlyHint ?? false,
+          isDestructive: tool.annotations?.destructiveHint === true,
+        }));
+      } finally {
+        await connection.close();
+      }
+    });
+    const tools: McpDiscoveredTool[] = result;
 
     return {
       server: {
-        ...server,
+        ...resolvedServer,
         approvedToolNames:
           server.approvalMode === "selected"
             ? server.approvedToolNames.filter((toolName) =>
@@ -159,10 +269,6 @@ export async function inspectMcpServer(server: McpServerConfig): Promise<McpInsp
         tools: [],
       },
     };
-  } finally {
-    if (close) {
-      await close();
-    }
   }
 }
 
@@ -175,16 +281,24 @@ export async function executeMcpTool(
     throw new Error(`Tool "${toolName}" is not approved for execution on server "${server.name}".`);
   }
 
-  const { client, close } = await createConnectedClient(server);
+  const { result, server: resolvedServer } = await withOAuthRetry(server, async (resolved) => {
+    const { client, close } = await createConnectedClient(resolved);
 
-  try {
-    return await client.callTool({
-      name: toolName,
-      arguments: args,
-    });
-  } finally {
-    await close();
+    try {
+      return await client.callTool({
+        name: toolName,
+        arguments: args,
+      });
+    } finally {
+      await close();
+    }
+  });
+
+  if (server.authMode === "oauth" && resolvedServer.oauth) {
+    server.oauth = resolvedServer.oauth;
   }
+
+  return result;
 }
 
 export function supportsOpenAIMcpTool(server: McpServerConfig) {

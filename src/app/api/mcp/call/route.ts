@@ -41,6 +41,7 @@ function normalizeServerPayload(server: Partial<McpServerConfig>) {
 
   return {
     server: {
+      authMode: server.authMode ?? "none",
       approvalMode: server.approvalMode ?? "never",
       approvedToolNames: server.approvedToolNames ?? [],
       args: server.args ?? [],
@@ -54,6 +55,7 @@ function normalizeServerPayload(server: Partial<McpServerConfig>) {
       id: server.id,
       lastCheckedAt: server.lastCheckedAt,
       name: server.name.trim(),
+      oauth: server.oauth,
       tools: server.tools ?? [],
       transport: server.transport,
       url: server.url?.trim(),

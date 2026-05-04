@@ -1,6 +1,6 @@
 {
   "name": "@thiagorufino/mcp-hub",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "private": false,
   "description": "MCP Hub is a local web UI for testing LLMs and MCP servers. Connect providers, inspect tool calls, and run multi-turn chats in one place.",
   "license": "Apache-2.0",
@@ -27,7 +27,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . --ignore-pattern .next --ignore-pattern .next-package",
+    "lint": "eslint . --ignore-pattern .next --ignore-pattern .next-package --ignore-pattern .npm-package",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs",
     "test:smoke": "node scripts/smoke-test-package.mjs",

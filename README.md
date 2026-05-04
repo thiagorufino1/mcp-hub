@@ -121,6 +121,10 @@ Connect to MCP servers over all three transports:
 
 Inspect tools, schemas, and execute calls directly from the sidebar.
 
+- Remote MCP auth support: custom headers or OAuth 2.0 when the server requires it
+- OAuth discovery follows MCP protected-resource metadata and authorization-server metadata
+- Discovery fallback supports root metadata, path-based metadata such as `/mcp`, and `WWW-Authenticate` hints
+
 - Automatic health revalidation: MCP status updates when a server goes offline or comes back
 - Per-server recovery logic: one failing MCP does not block others from being revalidated
 - Manual retest controls: force validation whenever you want from the sidebar
@@ -155,6 +159,7 @@ Inspect tools, schemas, and execute calls directly from the sidebar.
 Runs locally on loopback interfaces only. Credentials are sent only to providers you configure and never stored in any remote backend.
 
 - LLM credentials and MCP auth headers/env stored only in browser `sessionStorage`
+- OAuth state, tokens, and related MCP auth config stay in browser session storage too
 - Closing the tab clears all sensitive config
 - Chat history and non-sensitive UI preferences may persist locally
 - MCP `stdio` servers are spawned as child processes, so only connect to servers you trust
@@ -169,6 +174,7 @@ See [SECURITY.md](./SECURITY.md) for the full security model.
 - CLI app distributed via npm, not a library API
 - First launch downloads the standalone Next.js bundle, which may take a moment
 - Provider credentials are session-scoped, so you must re-enter them in new browser sessions
+- Remote MCP OAuth config is also session-scoped, so re-auth may be needed after session end
 - Remote multi-user deployment is out of scope
 
 ---

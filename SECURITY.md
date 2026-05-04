@@ -13,6 +13,7 @@ Binding the web server to a non-local interface is intentionally blocked in the 
 ## Sensitive data
 
 - LLM credentials and sensitive MCP configuration such as auth headers and environment variables are stored in browser `sessionStorage`
+- OAuth client/session data for remote MCP auth is also stored only in browser `sessionStorage`
 - Existing legacy local credentials are migrated into `sessionStorage` and removed from `localStorage`
 - Session-scoped credentials are normally cleared when the browser session ends, subject to browser restore/session behavior
 - Chat history and non-sensitive UI preferences may persist in browser `localStorage` for usability
@@ -21,6 +22,7 @@ Binding the web server to a non-local interface is intentionally blocked in the 
 
 - Sensitive provider credentials are intended to be session-scoped
 - Session-scoped MCP configuration is normally cleared when the browser session ends, subject to browser behavior
+- OAuth access tokens, refresh tokens, and client registration data follow the same session-scoped boundary
 - Non-sensitive UX state may persist longer for convenience
 - The project does not send stored credentials to any backend operated by the maintainer
 
